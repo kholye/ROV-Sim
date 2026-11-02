@@ -159,7 +159,8 @@ func _log(s: String) -> void:
 	events.append(s)
 
 
-## Таблица лидеров: JSON (поля как leaders_rings.json сборки) + строка в CSV. Возвращает 10 лучших.
+## Таблица лидеров: JSON (поля как leaders_rings.json сборки + режим управления «mode», без него — научный)
+## + строка в CSV. Возвращает 10 лучших того же режима.
 static func save_result(res: Dictionary, dir := "user://") -> Array:
 	var path := dir.path_join("leaders_rings.json")
 	var all: Array = []
@@ -169,6 +170,7 @@ static func save_result(res: Dictionary, dir := "user://") -> Array:
 			all = parsed
 	all.append(res)
 	all.sort_custom(func(a, b): return float(a["total"]) < float(b["total"]))
+	var mode: String = res.get("mode", "science")
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	f.store_string(JSON.stringify(all, "  "))
 	f.close()
@@ -177,8 +179,8 @@ static func save_result(res: Dictionary, dir := "user://") -> Array:
 	var c := FileAccess.open(csv, FileAccess.READ_WRITE if not new_file else FileAccess.WRITE)
 	c.seek_end()
 	if new_file:
-		c.store_line("name;total;time;penalty;missed;out_of_order;touches;date")
-	c.store_line("%s;%.1f;%.1f;%d;%d;%d;%d;%s" % [res["name"], res["total"], res["time"], res["penalty"],
-			res["missed"], res["out_of_order"], res["touches"], res["date"]])
+		c.store_line("name;total;time;penalty;missed;out_of_order;touches;date;mode")
+	c.store_line("%s;%.1f;%.1f;%d;%d;%d;%d;%s;%s" % [res["name"], res["total"], res["time"], res["penalty"],
+			res["missed"], res["out_of_order"], res["touches"], res["date"], mode])
 	c.close()
-	return all.slice(0, 10)
+	return all.filter(func(r): return r.get("mode", "science") == mode).slice(0, 10)

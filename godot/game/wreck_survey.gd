@@ -1,13 +1,15 @@
 class_name WreckSurvey
 extends RefCounted
-## Правила осмотра судна как в первой версии симулятора (сборка преподавателя):
-## точка осмотрена, если она ближе 3 м к камере, в пределах 35° от оси камеры, ничем не заслонена,
-## и так 1,5 с подряд. Время идёт после смещения на 0,5 м от старта; финиш, когда осмотрены все.
-## Касания считаются без штрафа. Без узлов: проверяется в tests/game_tests.gd.
+## Правила осмотра судна (версия 1.1; в первой версии симулятора — 3 м, 35° от оси, 1,5 с): точка осмотрена,
+## если она ближе RANGE к камере аппарата, в центральной части кадра (FRAME_FILL ширины и высоты: frame_tan —
+## тангенсы половин углов кадра), ничем не заслонена и различима — проверку заслонения и света делает
+## вызывающий (visible: в мутной воде нужна доля света от самой поверхности в яркости пикселя не меньше
+## порога, см. game/wreck.gd), и так HOLD с подряд. Время идёт после смещения на 0,5 м от старта; финиш,
+## когда осмотрены все. Касания считаются без штрафа. Без узлов: проверяется в tests/game_tests.gd.
 
-const RANGE := 3.0
-const ANGLE_DEG := 35.0
-const HOLD := 1.5
+const RANGE := 2.0
+const FRAME_FILL := 0.8
+const HOLD := 2.0
 const START_MOVE := 0.5
 
 var points: Array = []          # Vector3, мир Godot
@@ -22,6 +24,7 @@ var finish_time := -1.0
 var touches := 0
 var last_touch := -10.0
 var just_done := -1             # номер точки, осмотренной на этом шаге (для снимка), иначе −1
+var frame_tan := Vector2(tan(deg_to_rad(35.0)), tan(deg_to_rad(35.0)) * 9.0 / 16.0)   # tg половин углов кадра (гор., верт.)
 var _last_t := 0.0
 
 
@@ -53,13 +56,11 @@ func tick(cam: Transform3D, now: float, visible: Callable) -> void:
 			return
 	if finished():
 		return
-	var fwd := -cam.basis.z.normalized()
 	for i in points.size():
 		if done[i]:
 			continue
 		var v: Vector3 = points[i] - cam.origin
-		var d := v.length()
-		var ok: bool = d < RANGE and rad_to_deg(fwd.angle_to(v)) < ANGLE_DEG and visible.call(cam.origin, points[i])
+		var ok: bool = v.length() < RANGE and in_frame(cam, points[i]) and visible.call(cam.origin, points[i])
 		seen_for[i] = seen_for[i] + dt if ok else 0.0
 		if seen_for[i] >= HOLD:
 			done[i] = true
@@ -67,6 +68,14 @@ func tick(cam: Transform3D, now: float, visible: Callable) -> void:
 			just_done = i
 	if done.count(false) == 0 and finish_time < 0.0:
 		finish_time = now
+
+
+## Точка в центральной части кадра (FRAME_FILL ширины и высоты) перед камерой.
+func in_frame(cam: Transform3D, p: Vector3) -> bool:
+	var lc := cam.affine_inverse() * p           # оси камеры: x вправо, y вверх, смотрит в −z
+	if lc.z >= -0.05:
+		return false
+	return absf(lc.x / -lc.z) <= frame_tan.x * FRAME_FILL and absf(lc.y / -lc.z) <= frame_tan.y * FRAME_FILL
 
 
 func contact(now: float) -> void:

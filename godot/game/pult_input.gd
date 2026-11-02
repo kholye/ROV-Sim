@@ -7,7 +7,8 @@ extends RefCounted
 ##   B                      -> удержание глубины (h), Y / A -> цель мельче / глубже на шаг,
 ##   крестовина ←/→         -> шаг цели 10 / 50 / 100 / 500 мм (как в пульте)
 ##   LB                     -> свет (L)
-## Клавиатура повторяет геймпад; клавиши интерфейса (окошко, фильтры, графики) к пульту не относятся.
+## Клавиатура повторяет геймпад (ход и поворот: WASD или стрелки); клавиши интерфейса (окошко, фильтры,
+## графики) к пульту не относятся.
 ## Смысл u/d пульта по исходникам не определён: принято u = набрать воду (аппарат тяжелеет), оценка.
 
 const STICK_MAX := 32767
@@ -15,7 +16,7 @@ const DEPTH_STEPS := [0.010, 0.050, 0.100, 0.500]     # м, шаги цели г
 
 ## Действия и клавиши по умолчанию. Геймпад добавляется в ensure_actions().
 const KEYS := {
-	"rov_fwd": [KEY_UP], "rov_back": [KEY_DOWN], "rov_left": [KEY_LEFT], "rov_right": [KEY_RIGHT],
+	"rov_fwd": [KEY_W, KEY_UP], "rov_back": [KEY_S, KEY_DOWN], "rov_left": [KEY_A, KEY_LEFT], "rov_right": [KEY_D, KEY_RIGHT],
 	"tank_both_fill": [KEY_E], "tank_both_empty": [KEY_Q],
 	"tank1_fill": [KEY_R], "tank1_empty": [KEY_F],
 	"tank2_fill": [KEY_T], "tank2_empty": [KEY_G],
@@ -54,7 +55,7 @@ static func ensure_actions() -> void:
 	InputMap.action_add_event("pip_cam", sv)
 
 
-## Клавиши-стрелки = стик до упора (±32767), как полное отклонение правого стика.
+## Клавиши хода (WASD / стрелки) = стик до упора (±32767), как полное отклонение правого стика.
 static func keyboard_stick(fwd: bool, back: bool, left: bool, right: bool) -> Vector2i:
 	return Vector2i((STICK_MAX if right else 0) - (STICK_MAX if left else 0),
 			(STICK_MAX if fwd else 0) - (STICK_MAX if back else 0))

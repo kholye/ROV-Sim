@@ -119,10 +119,12 @@ func _results(rings: bool) -> void:
 	MenuKit.button(tabs, "Судно", _results.bind(false))
 	v.add_child(tabs)
 	var t := ResultsTable.new()
+	var mode := String(Settings.get_value("control"))
+	var foot := "Режим: %s (настройки) · CSV: " % Settings.MODES.get(mode, mode)
 	if rings:
-		t.show_rings(ResultsTable.load_rings(), {}, "CSV: " + ProjectSettings.globalize_path("user://rings_results.csv"))
+		t.show_rings(ResultsTable.load_rings("user://", mode), {}, foot + ProjectSettings.globalize_path("user://rings_results.csv"))
 	else:
-		t.show_wreck(ResultsTable.load_wreck(), {}, "CSV: " + ProjectSettings.globalize_path("user://wreck_results.csv"))
+		t.show_wreck(ResultsTable.load_wreck("user://", mode), {}, foot + ProjectSettings.globalize_path("user://wreck_results.csv"))
 	v.add_child(t)
 
 

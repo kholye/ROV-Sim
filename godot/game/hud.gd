@@ -188,8 +188,10 @@ func _process(_dt: float) -> void:
 		t += "[color=#f2f2eab0]F1 справка · F9 запись[/color]\n"
 	if rov.emergency:
 		t += "[color=#ff5a45]АВАРИЙНОЕ ВСПЛЫТИЕ[/color]\n"
+	elif rov.control_mode != "science":
+		t += "%s · глубина %s м (E / Q)\n" % [Settings.MODES[rov.control_mode].to_upper(), num(rov.depth_target, 2)]
 	elif rov.depth_hold:
-		t += "ДЕРЖИМ ГЛУБИНУ %s м · шаг %d мм\n" % [num(rov.depth_target, 3), roundi(PultInput.DEPTH_STEPS[rov.step_i] * 1000)]
+		t += "ДЕРЖИМ ГЛУБИНУ %s м · PgUp/PgDn ±%d мм\n" % [num(rov.depth_target, 3), roundi(PultInput.DEPTH_STEPS[rov.step_i] * 1000)]
 	else:
 		t += "РУЧНОЙ · H удержание глубины\n"
 	t += "[font_size=15]ПИД %s / %s / %s   %s[/font_size]" % [num(rov.ctl.kp, 1), num(rov.ctl.kd, 1), num(rov.ctl.ki, 1),
@@ -249,12 +251,14 @@ func _make_help() -> Control:
 	return p
 
 
-const HELP := "[color=#e8b04a]УПРАВЛЕНИЕ КАК НА ПУЛЬТЕ[/color]\n[table=3][cell][color=#f2f2ea90]клавиатура[/color][/cell][cell][color=#f2f2ea90]геймпад Xbox[/color][/cell][cell][color=#f2f2ea90]команда в аппарат[/color][/cell][cell]↑ ↓ ← →   [/cell][cell]правый стик   [/cell][cell]ход и поворот: левый = y + x, правый = y − x[/cell][cell]E / Q   [/cell][cell]крестовина ↑/↓ + LT и RT   [/cell][cell]обе цистерны набрать / вытеснить (u / d)[/cell][cell]R / F   [/cell][cell]крестовина ↑/↓ + LT   [/cell][cell]носовая цистерна (дифферент)[/cell][cell]T / G   [/cell][cell]крестовина ↑/↓ + RT   [/cell][cell]кормовая цистерна[/cell][cell]H   [/cell][cell]B   [/cell][cell]удержание глубины вкл/выкл (h, цель в мм)[/cell][cell]PgUp / PgDn   [/cell][cell]Y / A   [/cell][cell]цель мельче / глубже на шаг[/cell][cell][lb] / [rb]   [/cell][cell]крестовина ← / →   [/cell][cell]шаг цели 10 / 50 / 100 / 500 мм[/cell][cell]L   [/cell][cell]LB   [/cell][cell]лампа 0 / 50 / 100 % (L)[/cell][cell]X дважды   [/cell][cell]—   [/cell][cell]сброс груза 1 кг (x, G)[/cell][cell]пробел дважды   [/cell][cell]—   [/cell][cell]аварийное всплытие: цистерны осушаются (A); ещё раз — отмена[/cell][cell]Esc   [/cell][cell]Start   [/cell][cell]пауза: ПИД (n: Kp, Kd, Ki 0,0-9,9), настройки, выход[/cell][/table]\n\n" + \
+const HELP := "[color=#e8b04a]УПРАВЛЕНИЕ КАК НА ПУЛЬТЕ[/color]\n[table=3][cell][color=#f2f2ea90]клавиатура[/color][/cell][cell][color=#f2f2ea90]геймпад Xbox[/color][/cell][cell][color=#f2f2ea90]команда в аппарат[/color][/cell][cell]W S A D, ↑ ↓ ← →   [/cell][cell]правый стик   [/cell][cell]ход и поворот: левый = y + x, правый = y − x[/cell][cell]E / Q   [/cell][cell]крестовина ↑/↓ + LT и RT   [/cell][cell]обе цистерны набрать / вытеснить (u / d)[/cell][cell]R / F   [/cell][cell]крестовина ↑/↓ + LT   [/cell][cell]носовая цистерна (дифферент)[/cell][cell]T / G   [/cell][cell]крестовина ↑/↓ + RT   [/cell][cell]кормовая цистерна[/cell][cell]H   [/cell][cell]B   [/cell][cell]удержание глубины вкл/выкл (h, цель в мм)[/cell][cell]PgUp / PgDn   [/cell][cell]Y / A   [/cell][cell]при удержании (H): цель глубины на шаг мельче / глубже — ПИД сам гонит цистерны[/cell][cell][lb] / [rb]   [/cell][cell]крестовина ← / →   [/cell][cell]шаг цели 10 / 50 / 100 / 500 мм[/cell][cell]L   [/cell][cell]LB   [/cell][cell]лампа 0 / 50 / 100 % (L)[/cell][cell]X дважды   [/cell][cell]—   [/cell][cell]сброс груза 1 кг (x, G)[/cell][cell]пробел дважды   [/cell][cell]—   [/cell][cell]аварийное всплытие: цистерны осушаются (A); ещё раз — отмена[/cell][cell]Esc   [/cell][cell]Start   [/cell][cell]пауза: ПИД (n: Kp, Kd, Ki 0,0-9,9), настройки, выход[/cell][/table]\n\n" + \
 		"[color=#e8b04a]ЭКРАН[/color]\n" + \
 		"Tab · X геймпада — фильтры (стильный / научный вид)   V · Back — окошко со стороны   Shift+V — его камера\n" + \
 		"F2 — график глубины   F3 — силы в окошке   F4 — ослабление света   C — камера аппарата / вид сзади\n" + \
 		"F9 — запись телеметрии в CSV   F1 — эта справка\n\n" + \
-		"Крен и боковое смещение у аппарата не управляются (как у настоящего): крен только показывается."
+		"Крен и боковое смещение у аппарата не управляются (как у настоящего): крен только показывается.\n" + \
+		"Режимы автопилот / автопилот + ускорение (настройки): E / Q — глубже / мельче (плавно двигают цель удержания),\n" + \
+		"курс и дифферент держатся сами, ход разгоняется плавно."
 
 
 ## Лента курса: 120° на ширину, метки через 5°, подписи через 15°.

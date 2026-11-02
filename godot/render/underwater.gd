@@ -15,6 +15,10 @@ var c := Vector3.ZERO
 var kd := Vector3.ZERO
 var esurf := Vector3.ZERO
 var bp550 := 0.0          # рассеяние взвесью при 550 нм, 1/м
+var turbidity := 1.0      # множитель рассеяния взвесью (мутность у края места, set_turbidity)
+var _a_w := Vector3.ZERO  # поглощение и чистая вода без взвеси
+var _b_w := Vector3.ZERO
+var _b_p := Vector3.ZERO  # рассеяние взвесью воды сцены
 var _materials := {}      # исходный материал -> ShaderMaterial
 
 
@@ -38,11 +42,33 @@ func _init(water := "pool", e_surface_key := "pool_e_surface") -> void:
 	var bp: float = p[water + "_bp550"]
 	var ax: Vector3 = v3(p[water + "_a_extra_rgb"]) if p.has(water + "_a_extra_rgb") else v3(p["pool_a_extra_rgb"])
 	bp550 = bp
-	a = v3(p["water_a_rgb"]) + ax
-	b = v3(p["water_bw_rgb"]) + bp * v3(p["particle_b_shape_rgb"])
+	_a_w = v3(p["water_a_rgb"]) + ax
+	_b_w = v3(p["water_bw_rgb"])
+	_b_p = bp * v3(p["particle_b_shape_rgb"])
+	_coeffs()
+	esurf = v3(p[e_surface_key])
+
+
+func _coeffs() -> void:
+	a = _a_w
+	b = _b_w + turbidity * _b_p
 	c = a + b
 	kd = (a + float(p["phase_ff_bb"]) * b) / float(p["mean_cosine_down"])
-	esurf = v3(p[e_surface_key])
+
+
+## Мутность у края места (game/tether.gd): рассеяние взвесью × k (k = 1 — вода сцены, поглощение то же).
+## Пересчитывает c, b, K_d, глобальные параметры шейдера и модель света аппарата (если передана).
+## Игровое оформление границы: облако взвеси вокруг места, оценка; на калибровку воды (V5) не влияет.
+func set_turbidity(k: float, light: LightModel = null) -> void:
+	turbidity = k
+	_coeffs()
+	RenderingServer.global_shader_parameter_set("uw_c", c)
+	RenderingServer.global_shader_parameter_set("uw_b", b)
+	RenderingServer.global_shader_parameter_set("uw_kd", kd)
+	if light:
+		light.c = c
+		light.b = b
+		light.kd = kd
 
 
 ## Сила света лампы I0·цвет (кд) при мощности power (0..1), как light.lamp_intensity_I0.
@@ -167,6 +193,15 @@ static func material(albedo: Vector3, emission := Vector3.ZERO, tex: Texture2D =
 	return register(m)
 
 
+## Двусторонний материал водорослей и живности: альбедо × тон цвета вершин, колыхание sway м по альфе.
+static func bio(albedo: Vector3, sway: float) -> ShaderMaterial:
+	var m := ShaderMaterial.new()
+	m.shader = BIO_SHADER
+	m.set_shader_parameter("albedo", albedo)
+	m.set_shader_parameter("sway", sway)
+	return register(m)
+
+
 static func volume_material() -> ShaderMaterial:
 	var m := ShaderMaterial.new()
 	m.shader = VOLUME_SHADER
@@ -184,6 +219,11 @@ const TEX_GAIN := {"rock_boulder_dry": 0.5}
 ## Оттенок по полному имени материала (тот же набор текстур, другой цвет): тёмно-синяя плитка разметки.
 const TEX_TINT := {"MAT_pool_tiles__lane": Vector3(0.10, 0.17, 0.45)}
 const TEXTURED_SHADER := preload("res://shaders/underwater_textured.gdshader")
+## Водоросли и сидячая живность «BIO_<вид>» (blender/build_wreck_site.py): амплитуда колыхания на конце, м
+## (оценка; ламинария гибкая и длинная, актинии лишь шевелят венцом, звёзды и створки неподвижны).
+const BIO_SHADER := preload("res://shaders/underwater_bio.gdshader")
+const BIO_SWAY := {"BIO_kelp": 0.22, "BIO_redalgae": 0.03, "BIO_metridium": 0.012, "BIO_hydroid": 0.015,
+		"BIO_alcyonium": 0.004}
 
 
 static func tex_set(set_name: String) -> Array:
@@ -242,6 +282,10 @@ func convert_tree(root: Node, emission_cd := 2000.0) -> void:
 
 func _convert(src: BaseMaterial3D) -> ShaderMaterial:
 	if _materials.has(src):
+		return _materials[src]
+	if src.resource_name.begins_with("BIO_"):
+		var lc := src.albedo_color.srgb_to_linear()
+		_materials[src] = bio(Vector3(lc.r, lc.g, lc.b), float(BIO_SWAY.get(src.resource_name, 0.0)))
 		return _materials[src]
 	var tm := textured_from_name(src.resource_name)
 	if tm == null and src.albedo_texture:          # фото-текстура (скан судна): альбедо как есть

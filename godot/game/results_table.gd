@@ -2,6 +2,8 @@ class_name ResultsTable
 extends PanelContainer
 ## Таблица результатов в игре: кольца (user://leaders_rings.json, 10 лучших, поля как в сборке
 ## преподавателя) и осмотр судна (user://wreck_results.csv). Тот же вид в главном меню и на финише.
+## Результаты отдельно по режиму управления (Settings.MODES); у осмотра судна — только по правилам версии 1.1
+## (строки с режимом), старые строки (правила 3 м / 35° / 1,5 с) в таблицу не попадают.
 
 const RING_COLS := [["№", 3], ["имя", 14], ["итог", 7], ["время", 7], ["штраф", 6], ["пропущ.", 8], ["не по пор.", 10],
 		["касан.", 8], ["дата", 16]]
@@ -38,16 +40,18 @@ func _init() -> void:
 	box.add_child(foot)
 
 
-static func load_rings(dir := "user://") -> Array:
+static func load_rings(dir := "user://", mode := "science") -> Array:
 	var path := dir.path_join("leaders_rings.json")
 	if not FileAccess.file_exists(path):
 		return []
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
-	return parsed.slice(0, 10) if parsed is Array else []
+	if not parsed is Array:
+		return []
+	return (parsed as Array).filter(func(r): return r.get("mode", "science") == mode).slice(0, 10)
 
 
 ## Осмотр судна: строки CSV, лучшие по времени (только завершённые осмотры).
-static func load_wreck(dir := "user://") -> Array:
+static func load_wreck(dir := "user://", mode := "science") -> Array:
 	var path := dir.path_join("wreck_results.csv")
 	var out := []
 	if not FileAccess.file_exists(path):
@@ -56,7 +60,7 @@ static func load_wreck(dir := "user://") -> Array:
 	f.get_csv_line(";")
 	while not f.eof_reached():
 		var r := f.get_csv_line(";")
-		if r.size() >= 5:
+		if r.size() >= 6 and r[5] == mode:
 			out.append({"name": r[0], "time": float(r[1]), "points": int(r[2]), "touches": int(r[3]), "date": r[4]})
 	out.sort_custom(func(a, b): return a["time"] < b["time"])
 	return out.slice(0, 10)
@@ -69,8 +73,9 @@ static func save_wreck(res: Dictionary, dir := "user://") -> void:
 	var c := FileAccess.open(csv, FileAccess.READ_WRITE if not new_file else FileAccess.WRITE)
 	c.seek_end()
 	if new_file:
-		c.store_line("name;time;points;touches;date")
-	c.store_line("%s;%.1f;%d;%d;%s" % [res["name"], res["time"], res["points"], res["touches"], res["date"]])
+		c.store_line("name;time;points;touches;date;mode")
+	c.store_line("%s;%.1f;%d;%d;%s;%s" % [res["name"], res["time"], res["points"], res["touches"], res["date"],
+			res.get("mode", "science")])
 	c.close()
 
 

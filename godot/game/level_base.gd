@@ -40,6 +40,8 @@ func _parse_args() -> void:
 func setup_level(water: String, e_surface_key: String, surface_y := 0.0) -> void:
 	_parse_args()
 	Settings.override_from_args(args)
+	if args.has("auto") or args.has("bench"):     # проверки и замеры — всегда в научном режиме
+		Settings.override_from_args({"control": "science"})
 	Settings.apply_global()
 	PultInput.ensure_actions()
 	uw = Underwater.new(water, e_surface_key)
@@ -158,5 +160,9 @@ func _process(delta: float) -> void:
 			var p5: float = s[int(s.size() * 0.05)]
 			print("BENCH ", JSON.stringify({"scene": scene_file_path, "seconds": _bench_t - 2.0, "frames": s.size(),
 					"fps_avg": snappedf(avg, 0.1), "fps_p5": snappedf(p5, 0.1), "fps_p1": snappedf(p1, 0.1),
-					"fps_min": snappedf(s[0], 0.1), "size": get_viewport().get_visible_rect().size}))
+					"fps_min": snappedf(s[0], 0.1), "size": get_viewport().get_visible_rect().size,
+					"draw_calls": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_DRAW_CALLS_IN_FRAME),
+					"primitives": RenderingServer.get_rendering_info(RenderingServer.RENDERING_INFO_TOTAL_PRIMITIVES_IN_FRAME),
+					"cpu_process_ms": snappedf(Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0, 0.01),
+					"cpu_physics_ms": snappedf(Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0, 0.01)}))
 			get_tree().quit()

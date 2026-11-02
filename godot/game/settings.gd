@@ -5,7 +5,8 @@ extends RefCounted
 
 const PATH := "user://settings.cfg"
 const DEFAULTS := {
-	"filters": true,          # стильный вид (Tab); выкл = научный: только расчёт света и интерфейс
+	"filters": false,         # стильный вид (Tab, настройки); выкл = научный: только расчёт света и интерфейс
+	"control": "science",     # режим управления: science / assist / boost (MODES), с следующего запуска уровня
 	"pip": true,              # окошко «со стороны» (V)
 	"pip_cam": 0,             # 0 сбоку, 1 сзади, 2 сверху (Shift+V)
 	"forces": true,           # векторы сил в окошке (F3)
@@ -19,6 +20,11 @@ const DEFAULTS := {
 	"pid": [0.2, 5.1, 0.0],   # Kp, Kd, Ki в шкале пульта 0,0-9,9 (порядок команды n); по V3
 }
 
+## Режимы управления (game/rov.gd): научный — как пульт; автопилот — та же физика, помогает пульт;
+## автопилот + ускорение — ещё насос цистерн ×3 и тяга ×1,5 (уже не настоящий аппарат).
+const MODES := {"science": "научный", "assist": "автопилот", "boost": "автопилот + ускорение"}
+const VERSION := 2               # 2: стильный вид по умолчанию выключен (сохранённое «включено» сбрасывается)
+
 static var _cfg: ConfigFile
 static var _over := {}           # из командной строки (снимки, замеры): не сохраняются
 
@@ -28,6 +34,11 @@ static func _load() -> void:
 		return
 	_cfg = ConfigFile.new()
 	_cfg.load(PATH)
+	if int(_cfg.get_value("main", "version", 1)) < VERSION:
+		if _cfg.has_section_key("main", "filters"):
+			_cfg.erase_section_key("main", "filters")
+		_cfg.set_value("main", "version", VERSION)
+		_cfg.save(PATH)
 
 
 static func get_value(key: String):

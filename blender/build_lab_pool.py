@@ -206,7 +206,7 @@ if render_dir:
 
 for m in bpy.data.materials:
     if m.name.startswith("MAT_") and m.use_nodes:
-        for n in [n for n in m.node_tree.nodes if n.type == "TEX_IMAGE"]:
+        for n in [n for n in m.node_tree.nodes if n.type in ("TEX_IMAGE", "VERTEX_COLOR")]:   # с узлом цвета вершин экспортёр теряет альфу (маску ила)
             m.node_tree.nodes.remove(n)
 os.makedirs(os.path.dirname(GLB), exist_ok=True)
 for o in bpy.context.view_layer.objects:

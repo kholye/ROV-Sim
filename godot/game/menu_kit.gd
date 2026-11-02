@@ -99,6 +99,21 @@ static func settings_box(on_change: Callable) -> VBoxContainer:
 		var key: String = item[0]
 		cb.toggled.connect(func(on): Settings.set_value(key, on); Settings.apply_global(); on_change.call())
 		v.add_child(cb)
+	var rowm := HBoxContainer.new()
+	var lm := Label.new()
+	lm.text = "Режим управления  "
+	rowm.add_child(lm)
+	var om := OptionButton.new()
+	var keys := Settings.MODES.keys()
+	for i in keys.size():
+		om.add_item(Settings.MODES[keys[i]], i)
+	om.select(maxi(keys.find(String(Settings.get_value("control"))), 0))
+	om.item_selected.connect(func(i): Settings.set_value("control", keys[i]); on_change.call())
+	rowm.add_child(om)
+	v.add_child(rowm)
+	note(v, "Научный — как настоящий пульт. Автопилот — та же физика, пульт помогает: плавный ход, поворот с постоянной скоростью, держит курс и\n" +
+			"дифферент, глубина клавишами E / Q через удержание. Автопилот + ускорение — ещё насос цистерн ×3 и тяга ×1,5.\n" +
+			"Режим применяется со следующего запуска уровня; результаты в таблицах — отдельно по режимам.")
 	var row := HBoxContainer.new()
 	var l := Label.new()
 	l.text = "Разрешение 3D в стильном виде  "

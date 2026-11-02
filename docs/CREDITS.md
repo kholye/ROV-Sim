@@ -38,7 +38,7 @@
 - Аппарат, бассейны, кольца, бочки, якорь, камни — свои, собраны скриптами Blender (`blender/*.py`).
 
 ## Текстуры
-- **Poly Haven** (https://polyhaven.com), лицензия **CC0**: brown_mud_02, brown_mud_03, dense_sand, rock_boulder_dry, rust_coarse_01, green_metal_rust, concrete_wall_006, rubber_tiles, anti_skid_tiles (`godot/assets/textures/`, скачивает `work/tools/get_polyhaven.py`).
+- **Poly Haven** (https://polyhaven.com), лицензия **CC0**: brown_mud_02, brown_mud_03, brown_mud_rocks_01, dense_sand, rock_boulder_dry, rust_coarse_01, green_metal_rust, concrete_wall_006, rubber_tiles, anti_skid_tiles (`godot/assets/textures/`, скачивает `work/tools/get_polyhaven.py`).
 - Плитка бассейна `pool_tiles` — своя (`work/tools/make_pool_tiles.py`).
 
 ## Шрифт и звук

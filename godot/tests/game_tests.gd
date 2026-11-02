@@ -3,7 +3,7 @@ extends SceneTree
 ##   Godot_console --headless --path godot --script res://tests/game_tests.gd
 ## Кольца (как RingCourse.cs сборки): проход по оси, обратный проход, облёт, порядок (+15),
 ## пропуск к финишу (+30), финиш на 6-м, касания без штрафа с паузой 0,4 с, таблица лидеров.
-## Осмотр судна: дальность 3 м, угол 35°, 1,5 с подряд.
+## Осмотр судна: дальность 2 м, центр кадра, 2 с подряд. Режимы управления: научный, автопилот, ускорение.
 
 var failures := 0
 
@@ -70,50 +70,55 @@ func _init() -> void:
 		pass_ring(rc2, i, 10.0 * (i + 1))
 	check("6 колец по порядку: штраф 0, итог = время", rc2.penalty() == 0 and absf(rc2.total() - 60.1) < 1e-6)
 
-	# осмотр судна
+	# осмотр судна (правила версии 1.1: 2 м, центр кадра, 2 с подряд)
 	var sv := WreckSurvey.new()
-	var pts: Array = [Vector3(0, 0, -2.0)]
+	var pts: Array = [Vector3(0, 0, -1.5)]
 	sv.points = pts
 	sv.names = ["тест"]
 	sv.start(Vector3.ZERO, 0.0)
 	var cam := Transform3D()        # смотрит в −Z
 	sv.tick(Transform3D(Basis(), Vector3(0, 0, 0.6)), 0.0, func(_a, _b): return true)
 	check("смещение 0,5 м от старта запускает время", sv.started)
-	for k in 100:
+	for k in 110:
 		sv.tick(cam, 0.02 * k, func(_a, _b): return true)
-	check("точка в 2 м на оси, 1,98 с: осмотрена", sv.done[0])
+	check("точка в 1,5 м на оси, 2,18 с: осмотрена", sv.done[0])
 	var sv2 := WreckSurvey.new()
-	sv2.points = [Vector3(0, 0, -3.2)]
+	sv2.points = [Vector3(0, 0, -2.2)]
 	sv2.names = ["далеко"]
 	sv2.start(Vector3(0, 0, 1), 0.0)
 	for k in 200:
 		sv2.tick(cam, 0.02 * k, func(_a, _b): return true)
-	check("дальше 3 м: не осмотрена", not sv2.done[0])
+	check("дальше 2 м: не осмотрена", not sv2.done[0])
 	var sv3 := WreckSurvey.new()
-	sv3.points = [Vector3(-2.0 * sin(deg_to_rad(36)), 0, -2.0 * cos(deg_to_rad(36)))]
-	sv3.names = ["сбоку"]
+	sv3.points = [Vector3(0, 1.5 * sin(deg_to_rad(20)), -1.5 * cos(deg_to_rad(20)))]
+	sv3.names = ["у края кадра"]
 	sv3.start(Vector3(0, 0, 1), 0.0)
 	for k in 200:
 		sv3.tick(cam, 0.02 * k, func(_a, _b): return true)
-	check("36° от оси камеры: не осмотрена", not sv3.done[0])
+	check("20° вверх (за центральной частью кадра 16:9): не осмотрена", not sv3.done[0])
 	var sv4 := WreckSurvey.new()
-	sv4.points = [Vector3(0, 0, -2.0)]
-	sv4.names = ["заслонена"]
+	sv4.points = [Vector3(0, 0, -1.5)]
+	sv4.names = ["заслонена или не видна"]
 	sv4.start(Vector3(0, 0, 1), 0.0)
 	for k in 200:
 		sv4.tick(cam, 0.02 * k, func(_a, _b): return false)
-	check("заслонена: не осмотрена", not sv4.done[0])
+	check("заслонена или темно: не осмотрена", not sv4.done[0])
 	var sv5 := WreckSurvey.new()
-	sv5.points = [Vector3(0, 0, -2.0)]
+	sv5.points = [Vector3(0, 0, -1.5)]
 	sv5.names = ["мигает"]
 	sv5.start(Vector3(0, 0, 1), 0.0)
 	for k in 200:
-		var seen := (k / 50) % 2 == 0       # 1 с видна, 1 с нет
+		var seen := (k / 75) % 2 == 0       # 1,5 с видна, 1,5 с нет
 		sv5.tick(cam, 0.02 * k, func(_a, _b): return seen)
-	check("видна по 1 с с перерывами: не осмотрена (нужно 1,5 с подряд)", not sv5.done[0])
+	check("видна по 1,5 с с перерывами: не осмотрена (нужно 2 с подряд)", not sv5.done[0])
 
 	_pult_tests()
 	_results_tests()
+	process_frame.connect(_finish, CONNECT_ONE_SHOT)      # режимам нужен аппарат в дереве: после старта цикла
+
+
+func _finish() -> void:
+	_control_tests()
 	print("ИТОГ:", "все проверки пройдены" if failures == 0 else "%d не пройдено" % failures)
 	quit(1 if failures > 0 else 0)
 
@@ -152,6 +157,62 @@ func _pult_tests() -> void:
 	Settings.override_from_args({"filters": "0", "style_scale": "2", "pip": true})
 	check("настройки из командной строки: --filters 0 --style_scale 2 --pip",
 			Settings.get_value("filters") == false and Settings.get_value("style_scale") == 2 and Settings.get_value("pip") == true)
+
+
+## Режимы управления (game/rov.gd): аппарат в дереве без окна, шаги физики вручную.
+func _make_rov(mode: String) -> Rov:
+	Settings.override_from_args({"control": mode})
+	var uw := Underwater.new("wreck", "wreck_e_surface")
+	var r := Rov.new()
+	root.add_child(r)
+	r.setup(uw, 4.0, 0.0, 0.0, 0.0)
+	return r
+
+
+func _run(r: Rov, seconds: float) -> void:
+	for k in int(seconds * 60.0):
+		r._physics_process(1.0 / 60.0)
+
+
+func _control_tests() -> void:
+	var sci := _make_rov("science")
+	var base_rate: float = sci.p["tank_rate"]
+	var base_thr: float = sci.p["thrust_max"]
+	check("научный: удержание глубины выключено, параметры как в rov_params.json", not sci.depth_hold)
+	sci.x[11] = 0.3                                # толчок по рысканию 0,3 рад/с
+	_run(sci, 10.0)
+	var drift_sci := absf(wrapf(sci.x[5], -PI, PI))
+	var ast := _make_rov("assist")
+	check("автопилот: глубина на удержании с цели = глубина старта", ast.depth_hold and is_equal_approx(ast.depth_target, 4.0))
+	ast.x[11] = 0.3
+	_run(ast, 10.0)
+	var drift_ast := absf(wrapf(ast.x[5], -PI, PI))
+	check("автопилот: после толчка курс вернулся (< 3°: %.1f°), без помощи ушёл на %.0f°" % [rad_to_deg(drift_ast), rad_to_deg(drift_sci)],
+			rad_to_deg(drift_ast) < 3.0 and drift_sci > drift_ast)
+	Input.action_press("tank_both_fill")
+	_run(ast, 4.0)
+	Input.action_release("tank_both_fill")
+	check("автопилот: E 4 с ведёт цель на 1 м глубже (0,25 м/с), цель %.2f м" % ast.depth_target,
+			absf(ast.depth_target - 5.0) < 0.05)
+	_run(ast, 60.0)
+	check("автопилот: за минуту аппарат пошёл к цели (глубина %.2f м)" % ast.depth(), ast.depth() > 4.3)
+	var trn := _make_rov("assist")
+	Input.action_press("rov_left")
+	_run(trn, 3.0)
+	var psi_rel := rad_to_deg(trn.x[5])
+	Input.action_release("rov_left")
+	_run(trn, 6.0)
+	var psi_end := rad_to_deg(trn.x[5])
+	check("автопилот: A 3 с — поворот на %.0f° (≈ 35°/с), после отпускания встал на %.0f° и держит" % [psi_rel, psi_end],
+			psi_rel < -80.0 and psi_rel > -120.0 and psi_end <= psi_rel and psi_end > psi_rel - 25.0
+			and absf(trn.x[11]) < 0.02)
+	trn.queue_free()
+	var bst := _make_rov("boost")
+	check("ускорение: насос ×3, тяга ×1,5", is_equal_approx(float(bst.p["tank_rate"]), base_rate * 3.0)
+			and is_equal_approx(float(bst.p["thrust_max"]), base_thr * 1.5))
+	Settings.override_from_args({"control": "science"})
+	for r in [sci, ast, bst]:
+		r.queue_free()
 
 
 ## S7: таблица колец (JSON + CSV, 10 лучших) и осмотра судна (CSV), во временной папке.

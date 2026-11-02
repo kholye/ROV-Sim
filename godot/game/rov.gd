@@ -50,6 +50,26 @@ var _ae_frame := 0
 var input_enabled := true
 var autopilot: Callable            # для проверок: func(rov) -> [x, y] стика, -32768..32767
 var kinematic := false             # только для автопроверки осмотра судна: положение задаётся извне, физики нет
+## Режим управления (Settings «control», при создании аппарата): "science" — команды пульта как есть;
+## "assist" — та же физика, помогает пульт: ход разгоняется плавно (SLEW); поворот задаёт скорость рыскания
+## (до TURN_RATE), после отпускания пульт гасит вращение и держит курс, где аппарат остановился
+## (неустойчивость корпуса по курсу, docs/verification-report.md, V1); глубина всегда на удержании
+## (ПИД пульта), E / Q плавно ведут цель глубже / мельче (DEPTH_RATE), дифферент выравнивают цистерны по
+## отдельности; "boost" — как assist, и насос цистерн ×BOOST_TANK, тяга ×BOOST_THRUST (не настоящий аппарат).
+var control_mode := "science"
+const SLEW := 1.6                  # доля полного хода в секунду (разгон вперёд от нуля до полного ≈ 0,6 с)
+const HEADING_KP := 2.0            # удержание курса: доля тяги на радиан ошибки
+const HEADING_KD := 1.5            # и на рад/с скорости рыскания
+const TURN_RATE := 0.6             # рад/с (≈ 35°/с) при полном повороте
+const RATE_K := 1.2                # доля тяги на рад/с ошибки скорости рыскания
+const SETTLED := 0.08              # рад/с: вращение погашено — курс запоминается
+const DEPTH_RATE := 0.25           # м/с: скорость цели глубины при E / Q
+const TRIM_DEG := 2.0              # дифферент, при котором цистерны начинают выравнивать
+const BOOST_TANK := 3.0
+const BOOST_THRUST := 1.5
+var _stick_f := Vector2.ZERO       # сглаженный стик, доли −1..1
+var _psi_hold := 0.0
+var _yaw_free := false             # поворот или ещё гасим вращение: курс не держим
 
 var _ctl_acc := 0.0
 var _touch_t := -10.0
@@ -66,6 +86,10 @@ func setup(water: Underwater, depth: float, north: float, east: float, psi_deg: 
 	uw = water
 	light = LightModel.new(uw)
 	p = RovDynamics.load_params()
+	control_mode = String(Settings.get_value("control"))
+	if control_mode == "boost":
+		p["tank_rate"] = float(p["tank_rate"]) * BOOST_TANK
+		p["thrust_max"] = float(p["thrust_max"]) * BOOST_THRUST
 	dyn = RovDynamics.new(p)
 	PultInput.ensure_actions()
 	var g: Array = Settings.get_value("pid")
@@ -75,6 +99,9 @@ func setup(water: Underwater, depth: float, north: float, east: float, psi_deg: 
 	x[0] = north
 	x[1] = east
 	depth_meas = depth
+	depth_target = depth
+	depth_hold = control_mode != "science"
+	_psi_hold = x[5]
 	_rng.seed = 7
 	_model = ROV_GLB.instantiate()
 	add_child(_model)
@@ -221,8 +248,15 @@ func _stick() -> Vector2i:
 func _tank_command() -> PackedInt32Array:
 	if emergency:
 		return PackedInt32Array([-1, -1])
+	if control_mode != "science" and input_enabled:
+		var manual := PultInput.poll_tanks()
+		if (manual[0] != 0 or manual[1] != 0) and not (Input.is_action_pressed("tank_both_fill")
+				or Input.is_action_pressed("tank_both_empty")):
+			return manual                          # отдельная цистерна вручную (R/F, T/G) — как в научном режиме
 	if depth_hold:
 		var c := ctl.update(depth_target, depth_meas)
+		if control_mode != "science":
+			return _trim(c)
 		return PackedInt32Array([c, c])
 	if not input_enabled:
 		return PackedInt32Array([0, 0])
@@ -238,6 +272,8 @@ func _physics_process(delta: float) -> void:
 		meter_exposure(delta if time > 0.1 else 10.0)
 		return
 	var st := _stick()
+	if control_mode != "science" and not autopilot.is_valid():
+		st = _assist(st, delta)
 	var m := RovControl.joystick_to_motors(st.x, st.y)
 	thr = PackedFloat64Array([m[0] / 100.0, m[1] / 100.0])
 	if battery.E <= 0.0:
@@ -261,6 +297,59 @@ func _physics_process(delta: float) -> void:
 	_collide(old)
 	_sync()
 	meter_exposure(delta if time > 0.1 else 10.0)
+
+
+## Помощь пульта (режимы assist / boost): цель глубины по E / Q, удержание курса без команды поворота,
+## плавный разгон. Возвращает стик в единицах пульта.
+func _assist(st: Vector2i, delta: float) -> Vector2i:
+	if input_enabled:
+		var dz := 0.0
+		if Input.is_action_pressed("tank_both_fill"):
+			dz += DEPTH_RATE * delta
+		if Input.is_action_pressed("tank_both_empty"):
+			dz -= DEPTH_RATE * delta
+		if dz != 0.0:
+			depth_hold = true
+			depth_target = maxf(depth_target + dz, 0.0)
+	var want := Vector2(_unzone(st.x), _unzone(st.y))      # доля хода за мёртвой зоной пульта, −1..1
+	var u := 0.0                                    # нужная доля тяги на поворот
+	if absf(want.x) > 0.05:                         # поворот: держим скорость рыскания
+		_yaw_free = true
+		u = RATE_K * (want.x * TURN_RATE - x[11])
+	elif _yaw_free:                                 # отпустили: гасим вращение, курс запомним, когда встанет
+		u = -RATE_K * x[11]
+		if absf(x[11]) < SETTLED:
+			_yaw_free = false
+			_psi_hold = x[5]
+	else:                                           # держим курс
+		u = HEADING_KP * wrapf(_psi_hold - x[5], -PI, PI) - HEADING_KD * x[11]
+	u = clampf(u, -1.0, 1.0)
+	want.x = signf(u) * sqrt(absf(u))               # тяга движителя ∝ стик·|стик| (RovDynamics): обратное
+	_stick_f.x = want.x                             # поворот сглаживает сам регулятор скорости рыскания
+	_stick_f.y = move_toward(_stick_f.y, want.y, SLEW * delta)
+	return Vector2i(_zone(_stick_f.x), _zone(_stick_f.y))
+
+
+## Стик пульта ↔ доля хода: мёртвая зона ±15000 (RovControl), за ней линейно до ±32767.
+const ZONE := 15000
+
+
+static func _unzone(a: int) -> float:
+	return 0.0 if absi(a) < ZONE else clampf((a - ZONE * signi(a)) / float(32768 - ZONE), -1.0, 1.0)
+
+
+static func _zone(n: float) -> int:
+	return 0 if absf(n) < 0.004 else clampi(roundi(signf(n) * (ZONE + absf(n) * (32768 - ZONE))), -32768, 32767)
+
+
+## Удержание глубины с выравниванием дифферента: команда ПИД c обеим цистернам, при дифференте больше
+## TRIM_DEG носовая и кормовая получают разные команды (нос вверх — носовую наполнить, кормовую осушить).
+func _trim(c: int) -> PackedInt32Array:
+	var th := rad_to_deg(x[4])
+	if absf(th) < TRIM_DEG:
+		return PackedInt32Array([c, c])
+	var d := 1 if th > 0.0 else -1
+	return PackedInt32Array([clampi(c + d, -1, 1), clampi(c - d, -1, 1)])
 
 
 ## Столкновение: корпус-коробка движется из старого положения в новое; при касании

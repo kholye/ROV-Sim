@@ -101,6 +101,7 @@ func _physics_process(_delta: float) -> void:
 	course.tick(rov.position_ned(), rov.time)
 	if was == RingCourse.Phase.RUNNING and course.phase == RingCourse.Phase.FINISHED:
 		var res := course.result(player)
+		res["mode"] = rov.control_mode
 		top10 = RingCourse.save_result(res)
 		hud.results.show_rings(top10, res, "Ваш итог %s · Enter — новый заплыв · Esc — меню" % Hud.num(res["total"], 1))
 		hud.results.visible = true

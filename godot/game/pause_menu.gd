@@ -1,11 +1,12 @@
 class_name PauseMenu
 extends CanvasLayer
 ## Пауза (Esc / Start): продолжить, заново, ПИД, настройки, управление, главное меню, выход.
-## Физика стоит, пока открыто меню.
+## Физика стоит, пока открыто меню. link_lost: связь с аппаратом потеряна — только «заново» или меню.
 
 var level: LevelBase
 var box: CenterContainer
 var body: VBoxContainer
+var locked := false                # связь потеряна: Esc не продолжает
 
 
 func setup(lvl: LevelBase) -> void:
@@ -59,6 +60,18 @@ func _main() -> void:
 	first.grab_focus.call_deferred()
 
 
+func link_lost(text: String) -> void:
+	locked = true
+	visible = true
+	get_tree().paused = not level.args.has("shot")      # снимок (--shot) делается в работающем дереве
+	var v := _page()
+	MenuKit.heading(v, "СВЯЗЬ ПОТЕРЯНА", 26)
+	MenuKit.note(v, text)
+	var first := MenuKit.button(v, "Начать заново", func(): get_tree().paused = false; get_tree().reload_current_scene())
+	MenuKit.button(v, "Главное меню", func(): get_tree().paused = false; get_tree().change_scene_to_file(MenuKit.SCENES["menu"]))
+	first.grab_focus.call_deferred()
+
+
 func _pid() -> void:
 	var v := _page()
 	v.add_child(MenuKit.pid_box(level.rov))
@@ -73,7 +86,9 @@ func _settings() -> void:
 
 func _unhandled_input(ev: InputEvent) -> void:
 	if ev.is_action("pause") and ev.is_pressed() and not ev.is_echo():
-		if visible:
+		if locked:
+			pass
+		elif visible:
 			close()
 		else:
 			open()

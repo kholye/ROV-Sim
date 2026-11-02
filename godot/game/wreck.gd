@@ -1,7 +1,9 @@
 extends LevelBase
 ## Затонувшее судно в мутной воде. Правила и расстановка по первой версии симулятора (сборка преподавателя), само место — из Blender: blender/build_wreck_site.py -> wreck_site.glb
 ## (дно 40 × 40 м на 8 м с наносами ила и размывом, судно-скан «Malpas Metal Boat Wreck», artfletch,
-## CC BY 4.0, якорь с цепью, бочки, камни; точки осмотра — пустые объекты IP_*).
+## CC BY 4.0, якорь с цепью, бочки, камни, водоросли и сидячая живность; точки осмотра — пустые объекты IP_*).
+## Обрастание и живность на дне — экземплярами (game/wreck_life.gd), рыбы, камбала и крабы — game/fauna.gd
+## (места Home_* из той же сцены). Граница места — кабель и мутная вода у края (game/tether.gd).
 ## Шесть точек осмотра (WreckSurvey): 3 м, 35°, не заслонена, 1,5 с подряд. Каждая осмотренная точка
 ## сохраняет кадр; в конце отчёт (время, кадры, касания) в user://survey/<дата>/.
 
@@ -10,6 +12,10 @@ const WRECK_GLB := preload("res://assets/wreck/wreck_site.glb")
 
 var survey := WreckSurvey.new()
 var wreck: Node3D
+var tether: Tether
+const FOULING := 0.85         # обрастание корпуса в шейдере (налёт и «ковры» мелких актиний), оценка
+const NO_COLLIDE := ["Bio_", "Fine_", "Proto_"]   # водоросли, мелочь и образцы не мешают ходу
+const FINE_RANGE := 13.0      # мелочь на дне по ячейкам 6 м: дальше не рисуется (вода мутная)
 var out_dir := ""
 var shots := {}
 var _auto_path: Array = []
@@ -24,26 +30,61 @@ func _ready() -> void:
 	wreck.position = Vector3(0, -SEABED, 0)
 	add_child(wreck)
 	uw.convert_tree(wreck)
-	for mi in wreck.find_children("*", "MeshInstance3D", true, false):
-		(mi as MeshInstance3D).create_trimesh_collision()
+	for mi: MeshInstance3D in wreck.find_children("*", "MeshInstance3D", true, false):
+		if not NO_COLLIDE.any(func(pre): return mi.name.begins_with(pre)):
+			mi.create_trimesh_collision()
+		if mi.name.begins_with("Fine_"):
+			mi.visibility_range_end = FINE_RANGE
+		if mi.name == "WreckHull":
+			for s in mi.mesh.get_surface_count():
+				(mi.get_surface_override_material(s) as ShaderMaterial).set_shader_parameter("fouling", FOULING)
+	if not args.has("no-life"):              # --no-life / --no-fauna: без обрастания / рыб (замеры)
+		WreckLife.build(wreck)
 	var ips := wreck.find_children("IP_*", "", true, false)
 	ips.sort_custom(func(a, b): return String(a.name) < String(b.name))
 	for n in ips:
 		survey.points.append((n as Node3D).global_position)
 		survey.names.append(String(n.name).substr(5))
 	spawn_rov(4.0, -14.0, 0.0, 0.0)          # старт как в сборке: z = −14 м, глубина 4 м
+	if not args.has("no-fauna"):
+		var fauna := Fauna.new()
+		add_child(fauna)
+		fauna.setup(rov, wreck, Vector3(0, -SEABED, 0))
+	tether = Tether.new()
+	add_child(tether)
+	tether.setup(self, Vector3.ZERO, Vector3(0, -SEABED, 0))     # судно обеспечения на поверхности над местом
 	rov.touched.connect(func(_c): survey.contact(rov.time))
-	survey.start(rov.camera().global_position, 0.0)
+	var tan_h := tan(deg_to_rad(rov.cam_front.fov) * 0.5)        # камера аппарата держит ширину (KEEP_WIDTH)
+	var vp := get_viewport().get_visible_rect().size
+	survey.frame_tan = Vector2(tan_h, tan_h * vp.y / vp.x)
+	survey.start(rov.cam_front.global_position, 0.0)
 	out_dir = "user://survey/" + Time.get_datetime_string_from_system().replace(":", "-")
 	if args.has("auto"):
 		_plan_auto()
+
+
+## Точка не заслонена и различима: доля света от самой поверхности (альбедо 0,15, нормаль к камере) в яркости
+## пикселя не меньше SIGNAL_MIN по той же модели света (лампа, свет сверху, пелена воды). В воде у судна
+## (видимость 7 м) с лампой это ≈ до 1,7 м, без лампы ≈ до 1,1 м (оценка, docs/levels.md).
+const SIGNAL_MIN := 0.2
 
 
 func _visible(from: Vector3, to: Vector3) -> bool:
 	var q := PhysicsRayQueryParameters3D.create(from, to)
 	q.collision_mask = 1
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
-	return hit.is_empty() or (hit["position"] as Vector3).distance_to(to) < 0.35
+	if not (hit.is_empty() or (hit["position"] as Vector3).distance_to(to) < 0.35):
+		return false
+	return surface_signal(from, to) >= SIGNAL_MIN
+
+
+func surface_signal(cam: Vector3, p: Vector3) -> float:
+	var n := (cam - p).normalized()
+	var lo := rov.light.radiance(cam, p, n, Vector3(0.15, 0.15, 0.15))
+	var lv := rov.light.radiance(cam, p, n, Vector3.ZERO)
+	var yo := 0.299 * lo.x + 0.587 * lo.y + 0.114 * lo.z
+	var yv := 0.299 * lv.x + 0.587 * lv.y + 0.114 * lv.z
+	return 1.0 - yv / maxf(yo, 1e-12)
 
 
 func _physics_process(delta: float) -> void:
@@ -53,9 +94,9 @@ func _physics_process(delta: float) -> void:
 		_auto_step(delta)
 		if fmod(rov.time, 5.0) < delta * 0.999:
 			print("AUTO t=%.0f шаг %d/%d камера %s точки %s видна %s" % [rov.time, _auto_i, _auto_path.size(),
-					rov.camera().global_position.snappedf(0.01), survey.done, survey.seen_for])
+					rov.cam_front.global_position.snappedf(0.01), survey.done, survey.seen_for])
 	var was := survey.finished()
-	survey.tick(rov.camera().global_transform, rov.time, _visible)
+	survey.tick(rov.cam_front.global_transform, rov.time, _visible)    # осматривает камера аппарата, не вид сзади
 	if survey.just_done >= 0:
 		_shoot(survey.just_done)
 	if not was and survey.finished():
@@ -95,10 +136,10 @@ func _report() -> void:
 	fc.store_string(csv)
 	fc.close()
 	var res := {"name": String(args.get("name", Settings.get_value("player"))), "time": snappedf(survey.elapsed(rov.time), 0.1),
-			"points": survey.count(), "touches": survey.touches,
+			"points": survey.count(), "touches": survey.touches, "mode": rov.control_mode,
 			"date": Time.get_datetime_string_from_system().replace("T", " ").substr(0, 16)}
 	ResultsTable.save_wreck(res)
-	hud.results.show_wreck(ResultsTable.load_wreck(), res, "Отчёт и кадры: %s · Esc — меню" % ProjectSettings.globalize_path(out_dir))
+	hud.results.show_wreck(ResultsTable.load_wreck("user://", rov.control_mode), res, "Отчёт и кадры: %s · Esc — меню" % ProjectSettings.globalize_path(out_dir))
 	hud.results.visible = true
 	print("SURVEY ", JSON.stringify({"dir": ProjectSettings.globalize_path(out_dir), "time": snappedf(survey.elapsed(rov.time), 0.1),
 			"touches": survey.touches, "points": rows}))
@@ -111,14 +152,14 @@ func _report() -> void:
 func _plan_auto() -> void:
 	rov.kinematic = true
 	rov.input_enabled = false
-	# точка обзора: 2,2 м от точки осмотра в сторону от середины судна (по горизонтали) и на 0,7 м выше
+	# точка обзора: 1,1 м от точки осмотра в сторону от середины судна (по горизонтали) и на 0,4 м выше
 	var center := Vector3(0, -SEABED + 1.5, 0)
 	var pos := rov.global_position
 	for i in survey.points.size():
 		var target: Vector3 = survey.points[i]
 		var away := Vector3(target.x - center.x, 0, target.z - center.z)
 		away = away.normalized() if away.length() > 0.3 else Vector3.BACK
-		var view: Vector3 = target + away * 2.2 + Vector3.UP * 0.7
+		var view: Vector3 = target + away * 1.1 + Vector3.UP * 0.4
 		_auto_path.append([Vector3(pos.x, -2.5, pos.z), target])     # подняться над судном
 		_auto_path.append([Vector3(view.x, -2.5, view.z), target])
 		_auto_path.append([view, target])
@@ -161,7 +202,7 @@ func hud_mission() -> String:
 	var t := "ОСМОТР %d / %d\n%s с" % [survey.count(), survey.points.size(), Hud.num(survey.elapsed(rov.time), 1)]
 	# ближайшая неосмотренная точка
 	var best := -1
-	var cam := rov.camera().global_position
+	var cam := rov.cam_front.global_position
 	for i in survey.points.size():
 		if not survey.done[i] and (best < 0 or cam.distance_to(survey.points[i]) < cam.distance_to(survey.points[best])):
 			best = i
@@ -171,11 +212,18 @@ func hud_mission() -> String:
 
 
 func hud_prompt() -> String:
+	if tether and tether.noise > 0.0:
+		return "КАБЕЛЬ НА ПРЕДЕЛЕ: осталось %s м — вернитесь к судну" % Hud.num(maxf(tether.remaining(), 0.0), 1)
 	if survey.finished():
 		return "ОСМОТР ЗАВЕРШЁН за %s с" % Hud.num(survey.elapsed(rov.time), 1)
 	if not survey.started:
 		return "отойдите на 0,5 м от старта — пойдёт время"
+	var cam := rov.cam_front.global_transform
 	for i in survey.points.size():
 		if not survey.done[i] and survey.seen_for[i] > 0.0:
 			return "%s в кадре: держите %s с" % [survey.names[i], Hud.num(maxf(WreckSurvey.HOLD - survey.seen_for[i], 0.0), 1)]
+	for i in survey.points.size():                  # в кадре, но не различима: подсказать почему
+		if not survey.done[i] and survey.in_frame(cam, survey.points[i]) and cam.origin.distance_to(survey.points[i]) < 4.0:
+			if cam.origin.distance_to(survey.points[i]) >= WreckSurvey.RANGE or surface_signal(cam.origin, survey.points[i]) < SIGNAL_MIN:
+				return "%s: плохо видно — ближе%s" % [survey.names[i], "" if rov.lamp_level > 0.0 else " и включите лампу (L)"]
 	return ""
