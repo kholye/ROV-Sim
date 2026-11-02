@@ -72,6 +72,7 @@ func spawn_rov(depth: float, north: float, east: float, psi_deg: float) -> void:
 		rov.x = RovDynamics.initial_state(v[2], deg_to_rad(v[3]))
 		rov.x[0] = v[0]
 		rov.x[1] = v[1]
+		rov.reset_control()
 		rov._sync()
 	if args.has("record"):                   # --record: запись телеметрии с первого кадра (как F9)
 		rov.telemetry.start(0.0)

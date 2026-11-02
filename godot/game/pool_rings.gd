@@ -90,8 +90,8 @@ func _reset_rov() -> void:
 	rov.x[1] = s[1]
 	rov.dropped = false
 	rov.emergency = false
-	rov.depth_hold = false
 	rov.battery = RovEnvironment.Battery.new(rov.p)
+	rov.reset_control()
 
 
 func _physics_process(_delta: float) -> void:

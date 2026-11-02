@@ -99,9 +99,7 @@ func setup(water: Underwater, depth: float, north: float, east: float, psi_deg: 
 	x[0] = north
 	x[1] = east
 	depth_meas = depth
-	depth_target = depth
-	depth_hold = control_mode != "science"
-	_psi_hold = x[5]
+	reset_control()
 	_rng.seed = 7
 	_model = ROV_GLB.instantiate()
 	add_child(_model)
@@ -145,6 +143,16 @@ func setup(water: Underwater, depth: float, north: float, east: float, psi_deg: 
 	_body.add_child(cs)
 	add_child(_body)
 	_sync()
+
+
+## После постановки аппарата (старт, «на старт», --at): цель глубины = текущая глубина, курс держится текущий;
+## в режимах автопилота удержание глубины сразу включено.
+func reset_control() -> void:
+	depth_target = x[2]
+	depth_hold = control_mode != "science"
+	_psi_hold = x[5]
+	_yaw_free = false
+	_stick_f = Vector2.ZERO
 
 
 func depth() -> float:
