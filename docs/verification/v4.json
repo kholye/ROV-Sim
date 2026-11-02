@@ -1,0 +1,262 @@
+{
+  "allan": {
+    "Wx": {
+      "N_table_deg": 0.00569978414596143,
+      "allan_at_1s_deg": 0.0056886312420988605,
+      "N_rel_error": -0.0019567238998815517,
+      "B_table_deg": 0.0020299894681485063,
+      "allan_min_deg": 0.0017946794259286747,
+      "tau_at_min_s": 24.97099786006541
+    },
+    "Wy": {
+      "N_table_deg": 0.0050998973344594575,
+      "allan_at_1s_deg": 0.005135938402207907,
+      "N_rel_error": 0.007067018291706528,
+      "B_table_deg": 0.0024299140091498216,
+      "allan_min_deg": 0.0016610411600908451,
+      "tau_at_min_s": 18.26158468270261
+    },
+    "Wz": {
+      "N_table_deg": 0.0041997806383089345,
+      "allan_at_1s_deg": 0.004196073165302748,
+      "N_rel_error": -0.0008827777747172361,
+      "B_table_deg": 0.0014902632251352712,
+      "allan_min_deg": 0.001195613149191681,
+      "tau_at_min_s": 24.97099786006541
+    }
+  },
+  "heading": {
+    "measured_deg": 0.15,
+    "tolerance_deg": [
+      0.075,
+      0.3
+    ],
+    "dunaev_sim_gyro_only_deg": 2.85,
+    "runs": 20,
+    "cases": [
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 1.0,
+        "drift_p5_deg": 0.26754053375467535,
+        "drift_median_deg": 0.285605575234875,
+        "drift_p95_deg": 0.31607748375716144,
+        "in_tolerance": true
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 2.0,
+        "drift_p5_deg": 0.17317406208445385,
+        "drift_median_deg": 0.18801537726970066,
+        "drift_p95_deg": 0.21863673317218907,
+        "in_tolerance": true
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 3.0,
+        "drift_p5_deg": 0.14432150855406947,
+        "drift_median_deg": 0.1528352635563498,
+        "drift_p95_deg": 0.17784075313911338,
+        "in_tolerance": true
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 5.0,
+        "drift_p5_deg": 0.1149484230291843,
+        "drift_median_deg": 0.12561678847793617,
+        "drift_p95_deg": 0.1525859729625456,
+        "in_tolerance": true
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 7.0,
+        "drift_p5_deg": 0.10292529125838042,
+        "drift_median_deg": 0.12353636101144877,
+        "drift_p95_deg": 0.15005612200082202,
+        "in_tolerance": true
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 10.0,
+        "drift_p5_deg": 0.09502707713969082,
+        "drift_median_deg": 0.13096833466745125,
+        "drift_p95_deg": 0.16456587275388693,
+        "in_tolerance": true
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 15.0,
+        "drift_p5_deg": 0.1089362625266694,
+        "drift_median_deg": 0.16182471959411443,
+        "drift_p95_deg": 0.2072647705034071,
+        "in_tolerance": true
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 20.0,
+        "drift_p5_deg": 0.12144593557902879,
+        "drift_median_deg": 0.19802739921489715,
+        "drift_p95_deg": 0.2593504566423606,
+        "in_tolerance": true
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 30.0,
+        "drift_p5_deg": 0.15140342223375933,
+        "drift_median_deg": 0.2625926757401034,
+        "drift_p95_deg": 0.3737961366677506,
+        "in_tolerance": true
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 100.0,
+        "drift_p5_deg": 0.2863945975682094,
+        "drift_median_deg": 0.6222866376027177,
+        "drift_p95_deg": 1.1200761542087077,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 300.0,
+        "drift_p5_deg": 0.48085630816858566,
+        "drift_median_deg": 1.2067629540557423,
+        "drift_p95_deg": 2.531955876147732,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": 1000.0,
+        "drift_p5_deg": 0.5012055177733254,
+        "drift_median_deg": 2.0031430274893425,
+        "drift_p95_deg": 5.334127288472867,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в °/с, как на рис. 24-25",
+        "tau_f_s": "только гироскоп",
+        "drift_p5_deg": 0.7089101348404571,
+        "drift_median_deg": 2.4086025014299466,
+        "drift_p95_deg": 8.654366052197753,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 1.0,
+        "drift_p5_deg": 0.8557648020162282,
+        "drift_median_deg": 1.0622537136747372,
+        "drift_p95_deg": 1.263561571580576,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 2.0,
+        "drift_p5_deg": 1.2715936420506506,
+        "drift_median_deg": 1.7141850407846335,
+        "drift_p95_deg": 2.1036338817186393,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 3.0,
+        "drift_p5_deg": 1.6388751327149373,
+        "drift_median_deg": 2.3187844241880518,
+        "drift_p95_deg": 2.9523865612221707,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 5.0,
+        "drift_p5_deg": 2.292434054404342,
+        "drift_median_deg": 3.4305805174482034,
+        "drift_p95_deg": 4.547212082892302,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 7.0,
+        "drift_p5_deg": 2.90365511852699,
+        "drift_median_deg": 4.5416328062439355,
+        "drift_p95_deg": 5.972603971737945,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 10.0,
+        "drift_p5_deg": 3.7180549634777877,
+        "drift_median_deg": 6.1226098001902365,
+        "drift_p95_deg": 8.044873724698212,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 15.0,
+        "drift_p5_deg": 5.040370101953118,
+        "drift_median_deg": 8.532789367687025,
+        "drift_p95_deg": 11.611536150498088,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 20.0,
+        "drift_p5_deg": 6.256837664023916,
+        "drift_median_deg": 10.657030521906368,
+        "drift_p95_deg": 15.040658609445543,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 30.0,
+        "drift_p5_deg": 8.466208248120484,
+        "drift_median_deg": 14.525875908606501,
+        "drift_p95_deg": 21.5718547804171,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 100.0,
+        "drift_p5_deg": 16.54583314492563,
+        "drift_median_deg": 35.44838417297191,
+        "drift_p95_deg": 64.29063581145188,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 300.0,
+        "drift_p5_deg": 27.40060051434324,
+        "drift_median_deg": 68.83821555089443,
+        "drift_p95_deg": 145.32210070378258,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": 1000.0,
+        "drift_p5_deg": 28.683490210982473,
+        "drift_median_deg": 114.75130146251324,
+        "drift_p95_deg": 452.53044928116236,
+        "in_tolerance": false
+      },
+      {
+        "units": "т. 5 в рад/с, как в шапке",
+        "tau_f_s": "только гироскоп",
+        "drift_p5_deg": 40.61755878040818,
+        "drift_median_deg": 138.00275785658945,
+        "drift_p95_deg": 495.85864915222777,
+        "in_tolerance": false
+      }
+    ],
+    "gyro_only_median_deg": 2.4086025014299466,
+    "calibrated_tau_f_s": 3.0,
+    "calibrated_median_deg": 0.1528352635563498,
+    "tau_f_in_tolerance_s": [
+      1.0,
+      2.0,
+      3.0,
+      5.0,
+      7.0,
+      10.0,
+      15.0,
+      20.0,
+      30.0
+    ],
+    "ahrs_tau_param": 3.0
+  }
+}

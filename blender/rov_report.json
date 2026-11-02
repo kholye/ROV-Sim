@@ -1,0 +1,1005 @@
+{
+ "parts": {
+  "hull_stern_flange": {
+   "tris": 768,
+   "volume_l": 0.3345,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.31125,
+    0.0,
+    0.0
+   ]
+  },
+  "stern_endplate": {
+   "tris": 128,
+   "volume_l": 0.0132,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.319,
+    -0.0,
+    0.0
+   ]
+  },
+  "hull_main_tube": {
+   "tris": 256,
+   "volume_l": 5.2397,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.0225,
+    0.0,
+    -0.0
+   ]
+  },
+  "hull_nose_cap": {
+   "tris": 1152,
+   "volume_l": 0.9755,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.29173,
+    0.0,
+    -0.0
+   ]
+  },
+  "hull_stern_collar": {
+   "tris": 192,
+   "volume_l": 0.0592,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.28,
+    0.0,
+    -0.0
+   ]
+  },
+  "stern_bolt_1": {
+   "tris": 64,
+   "volume_l": 0.0005,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.32744,
+    0.05359,
+    0.0222
+   ]
+  },
+  "stern_bolt_2": {
+   "tris": 64,
+   "volume_l": 0.0005,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.32743,
+    0.0222,
+    0.05359
+   ]
+  },
+  "stern_bolt_3": {
+   "tris": 64,
+   "volume_l": 0.0005,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.32742,
+    -0.0222,
+    0.05358
+   ]
+  },
+  "stern_bolt_4": {
+   "tris": 64,
+   "volume_l": 0.0005,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.32741,
+    -0.05358,
+    0.0222
+   ]
+  },
+  "stern_bolt_5": {
+   "tris": 64,
+   "volume_l": 0.0005,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.32744,
+    -0.05359,
+    -0.0222
+   ]
+  },
+  "stern_bolt_6": {
+   "tris": 64,
+   "volume_l": 0.0005,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.32743,
+    -0.0222,
+    -0.05359
+   ]
+  },
+  "stern_bolt_7": {
+   "tris": 64,
+   "volume_l": 0.0005,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.32742,
+    0.0222,
+    -0.05358
+   ]
+  },
+  "stern_bolt_8": {
+   "tris": 64,
+   "volume_l": 0.0005,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.32741,
+    0.05358,
+    -0.02219
+   ]
+  },
+  "stern_connector_1": {
+   "tris": 84,
+   "volume_l": 0.0032,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.33277,
+    -0.022,
+    -0.02
+   ]
+  },
+  "stern_connector_2": {
+   "tris": 84,
+   "volume_l": 0.0032,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.33277,
+    0.0,
+    -0.028
+   ]
+  },
+  "stern_connector_3": {
+   "tris": 84,
+   "volume_l": 0.0032,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.33277,
+    0.022,
+    -0.02
+   ]
+  },
+  "stern_connector_4": {
+   "tris": 84,
+   "volume_l": 0.0032,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.33277,
+    -0.026,
+    0.008
+   ]
+  },
+  "stern_connector_5": {
+   "tris": 84,
+   "volume_l": 0.0032,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.33277,
+    0.026,
+    0.008
+   ]
+  },
+  "stern_connector_6": {
+   "tris": 84,
+   "volume_l": 0.0032,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.33277,
+    0.0,
+    0.024
+   ]
+  },
+  "clamp_thrusters": {
+   "tris": 240,
+   "volume_l": 0.0171,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.25,
+    -0.0,
+    0.0
+   ]
+  },
+  "clamp_thrusters_liner": {
+   "tris": 192,
+   "volume_l": 0.0088,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.25,
+    0.0,
+    0.0
+   ]
+  },
+  "clamp_thrusters_bolt_R": {
+   "tris": 76,
+   "volume_l": 0.0012,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.25,
+    -0.00064,
+    0.066
+   ]
+  },
+  "clamp_thrusters_bolt_L": {
+   "tris": 76,
+   "volume_l": 0.0012,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.25,
+    -0.00064,
+    -0.066
+   ]
+  },
+  "clamp_1": {
+   "tris": 240,
+   "volume_l": 0.0171,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.19,
+    0.0,
+    0.0
+   ]
+  },
+  "clamp_1_liner": {
+   "tris": 192,
+   "volume_l": 0.0088,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.19,
+    -0.0,
+    0.0
+   ]
+  },
+  "clamp_1_bolt_R": {
+   "tris": 76,
+   "volume_l": 0.0012,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.19,
+    0.066,
+    0.00064
+   ]
+  },
+  "clamp_1_bolt_L": {
+   "tris": 76,
+   "volume_l": 0.0012,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.19,
+    -0.066,
+    0.00064
+   ]
+  },
+  "clamp_2": {
+   "tris": 240,
+   "volume_l": 0.0171,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.021,
+    0.0,
+    -0.0
+   ]
+  },
+  "clamp_2_liner": {
+   "tris": 192,
+   "volume_l": 0.0088,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.021,
+    -0.0,
+    0.0
+   ]
+  },
+  "clamp_2_bolt_R": {
+   "tris": 76,
+   "volume_l": 0.0012,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.021,
+    0.066,
+    0.00064
+   ]
+  },
+  "clamp_2_bolt_L": {
+   "tris": 76,
+   "volume_l": 0.0012,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.021,
+    -0.066,
+    0.00064
+   ]
+  },
+  "clamp_3": {
+   "tris": 240,
+   "volume_l": 0.0171,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.165,
+    0.0,
+    -0.0
+   ]
+  },
+  "clamp_3_liner": {
+   "tris": 192,
+   "volume_l": 0.0088,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.165,
+    -0.0,
+    -0.0
+   ]
+  },
+  "clamp_3_bolt_R": {
+   "tris": 76,
+   "volume_l": 0.0012,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.165,
+    0.066,
+    0.00064
+   ]
+  },
+  "clamp_3_bolt_L": {
+   "tris": 76,
+   "volume_l": 0.0012,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.165,
+    -0.066,
+    0.00064
+   ]
+  },
+  "clamp_4": {
+   "tris": 240,
+   "volume_l": 0.0171,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.246,
+    0.0,
+    -0.0
+   ]
+  },
+  "clamp_4_liner": {
+   "tris": 192,
+   "volume_l": 0.0088,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.246,
+    -0.0,
+    -0.0
+   ]
+  },
+  "clamp_4_bolt_R": {
+   "tris": 76,
+   "volume_l": 0.0012,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.246,
+    0.066,
+    0.00064
+   ]
+  },
+  "clamp_4_bolt_L": {
+   "tris": 76,
+   "volume_l": 0.0012,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.246,
+    -0.066,
+    0.00064
+   ]
+  },
+  "lower_flange": {
+   "tris": 384,
+   "volume_l": 0.0558,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.24,
+    0.0,
+    0.085
+   ]
+  },
+  "lower_tube": {
+   "tris": 256,
+   "volume_l": 0.5118,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.025,
+    0.0,
+    0.085
+   ]
+  },
+  "lower_cap": {
+   "tris": 384,
+   "volume_l": 0.0524,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.1925,
+    0.0,
+    0.085
+   ]
+  },
+  "lower_gland": {
+   "tris": 84,
+   "volume_l": 0.0032,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.26277,
+    0.0,
+    0.085
+   ]
+  },
+  "lower_clamp_1": {
+   "tris": 256,
+   "volume_l": 0.0058,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.044,
+    -0.0,
+    0.085
+   ]
+  },
+  "lower_clamp_1_liner": {
+   "tris": 128,
+   "volume_l": 0.0032,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.044,
+    0.0,
+    0.085
+   ]
+  },
+  "lower_clamp_2": {
+   "tris": 256,
+   "volume_l": 0.0058,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.165,
+    0.0,
+    0.085
+   ]
+  },
+  "lower_clamp_2_liner": {
+   "tris": 128,
+   "volume_l": 0.0032,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.165,
+    0.0,
+    0.085
+   ]
+  },
+  "ballast_rear": {
+   "tris": 128,
+   "volume_l": 0.1104,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.146,
+    0.0,
+    0.1225
+   ]
+  },
+  "ballast_rear_plug": {
+   "tris": 128,
+   "volume_l": 0.0104,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.081,
+    0.0,
+    0.1225
+   ]
+  },
+  "ballast_rear_tie_1": {
+   "tris": 128,
+   "volume_l": 0.0006,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.17249,
+    -0.0,
+    0.1225
+   ]
+  },
+  "ballast_rear_tie_2": {
+   "tris": 128,
+   "volume_l": 0.0006,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.114,
+    0.0,
+    0.1225
+   ]
+  },
+  "magnet": {
+   "tris": 124,
+   "volume_l": 0.0232,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.044,
+    -0.0,
+    0.118
+   ]
+  },
+  "ballast_drop_bar": {
+   "tris": 44,
+   "volume_l": 0.0093,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.034,
+    0.0,
+    0.1315
+   ]
+  },
+  "ballast_drop_shot": {
+   "tris": 128,
+   "volume_l": 0.1104,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.038,
+    0.0,
+    0.15
+   ]
+  },
+  "ballast_drop_shot_plug": {
+   "tris": 128,
+   "volume_l": 0.0104,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.103,
+    0.0,
+    0.15
+   ]
+  },
+  "ballast_drop_shot_tie_1": {
+   "tris": 128,
+   "volume_l": 0.0006,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.0115,
+    -0.0,
+    0.15
+   ]
+  },
+  "ballast_drop_shot_tie_2": {
+   "tris": 128,
+   "volume_l": 0.0006,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.07,
+    0.0,
+    0.15
+   ]
+  },
+  "nose_plate": {
+   "tris": 44,
+   "volume_l": 0.0226,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.305,
+    -0.0,
+    0.072
+   ]
+  },
+  "ballast_front": {
+   "tris": 128,
+   "volume_l": 0.0729,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.249,
+    0.0,
+    0.0905
+   ]
+  },
+  "ballast_front_plug": {
+   "tris": 128,
+   "volume_l": 0.0104,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.294,
+    -0.0,
+    0.0905
+   ]
+  },
+  "ballast_front_tie_1": {
+   "tris": 128,
+   "volume_l": 0.0006,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.23249,
+    0.0,
+    0.0905
+   ]
+  },
+  "ballast_front_tie_2": {
+   "tris": 128,
+   "volume_l": 0.0006,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.27299,
+    0.0,
+    0.0905
+   ]
+  },
+  "nose_connector": {
+   "tris": 84,
+   "volume_l": 0.0032,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.32577,
+    -0.0,
+    -0.0
+   ]
+  },
+  "camera": {
+   "tris": 108,
+   "volume_l": 0.1434,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.3575,
+    -0.0,
+    0.0
+   ]
+  },
+  "camera_body": {
+   "tris": 44,
+   "volume_l": 0.0818,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.356,
+    0.0,
+    -0.0
+   ]
+  },
+  "camera_frame": {
+   "tris": 44,
+   "volume_l": 0.0106,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.382,
+    0.0,
+    0.0
+   ]
+  },
+  "camera_lens": {
+   "tris": 256,
+   "volume_l": 0.0056,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.38777,
+    0.0,
+    -0.0
+   ]
+  },
+  "camera_latch": {
+   "tris": 44,
+   "volume_l": 0.0096,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.36,
+    0.0,
+    -0.029
+   ]
+  },
+  "camera_button_1": {
+   "tris": 36,
+   "volume_l": 0.0002,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.349,
+    0.0345,
+    -0.004
+   ]
+  },
+  "camera_button_2": {
+   "tris": 36,
+   "volume_l": 0.0002,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.363,
+    0.0345,
+    -0.004
+   ]
+  },
+  "camera_mount": {
+   "tris": 44,
+   "volume_l": 0.0182,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.358,
+    0.0,
+    0.048
+   ]
+  },
+  "lamp": {
+   "tris": 76,
+   "volume_l": 0.0659,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.31472,
+    0.0,
+    0.0955
+   ]
+  },
+  "lamp_leds": {
+   "tris": 108,
+   "volume_l": 0.0005,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.32975,
+    -0.0,
+    0.0955
+   ]
+  },
+  "fin_L": {
+   "tris": 44,
+   "volume_l": 0.0357,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.19,
+    -0.08808,
+    -0.0
+   ]
+  },
+  "fin_R": {
+   "tris": 44,
+   "volume_l": 0.0357,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    0.19,
+    0.08808,
+    0.0
+   ]
+  },
+  "thruster_L_duct": {
+   "tris": 1200,
+   "volume_l": 0.0477,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.2519,
+    -0.11,
+    0.03
+   ]
+  },
+  "thruster_L_hub": {
+   "tris": 336,
+   "volume_l": 0.0153,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.23474,
+    -0.11,
+    0.03
+   ]
+  },
+  "thruster_L_prop": {
+   "tris": 240,
+   "volume_l": 0.0045,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.2575,
+    -0.11,
+    0.03
+   ]
+  },
+  "thruster_L_bracket": {
+   "tris": 44,
+   "volume_l": 0.0046,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.25,
+    -0.06519,
+    0.03
+   ]
+  },
+  "thruster_R_duct": {
+   "tris": 1200,
+   "volume_l": 0.0477,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.2519,
+    0.11,
+    0.03
+   ]
+  },
+  "thruster_R_hub": {
+   "tris": 336,
+   "volume_l": 0.0153,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.23474,
+    0.11,
+    0.03
+   ]
+  },
+  "thruster_R_prop": {
+   "tris": 240,
+   "volume_l": 0.0045,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.2575,
+    0.11,
+    0.03
+   ]
+  },
+  "thruster_R_bracket": {
+   "tris": 44,
+   "volume_l": 0.0046,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.25,
+    0.06519,
+    0.03
+   ]
+  },
+  "cable_thruster_R": {
+   "tris": 296,
+   "volume_l": 0.0023,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.32649,
+    0.071,
+    0.01065
+   ]
+  },
+  "cable_thruster_L": {
+   "tris": 296,
+   "volume_l": 0.0023,
+   "manifold": true,
+   "internal": false,
+   "centroid_ned_m": [
+    -0.3265,
+    -0.071,
+    0.01065
+   ]
+  },
+  "tank_bow": {
+   "tris": 64,
+   "volume_l": 0.0686,
+   "manifold": true,
+   "internal": true,
+   "centroid_ned_m": [
+    0.25,
+    0.0,
+    -0.0
+   ]
+  },
+  "tank_stern": {
+   "tris": 64,
+   "volume_l": 0.0686,
+   "manifold": true,
+   "internal": true,
+   "centroid_ned_m": [
+    -0.25,
+    0.0,
+    -0.0
+   ]
+  }
+ },
+ "tris_total": 15384,
+ "objects": 87,
+ "materials": [
+  "MAT_Connector_Blue",
+  "MAT_Emissive_LED",
+  "MAT_Glass_Clear",
+  "MAT_Internal_Tank",
+  "MAT_PCB_Green",
+  "MAT_Paint_Yellow",
+  "MAT_Plastic_Black",
+  "MAT_Plastic_Green",
+  "MAT_Prop_Red",
+  "MAT_Rubber_Orange",
+  "MAT_Steel_Galvanized",
+  "MAT_Steel_Shot",
+  "MAT_Textolite_Orange"
+ ],
+ "non_manifold": [],
+ "hull_length_mm": 650.0,
+ "hull_diameter_y_mm": 140.0,
+ "hull_diameter_z_mm": 140.0,
+ "overall_ned_mm": {
+  "x": 764.7,
+  "y": 282.0,
+  "z": 239.8
+ },
+ "displaced_volume_l": 8.2855,
+ "cb_model_ned_m": [
+  0.01254,
+  0.0,
+  0.01354
+ ],
+ "config_volume_l": 8.2858,
+ "mass_for_neutral_kg": 8.201,
+ "config_cb_ned_m": [
+  0.01254,
+  0.0,
+  0.01354
+ ],
+ "config_cg_ned_m": [
+  0.012646843063,
+  0.0,
+  0.0422
+ ]
+}

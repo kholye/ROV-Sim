@@ -1,0 +1,23 @@
+{
+  "source": "Malpas Metal Boat Wreck, artfletch, CC BY 4.0, https://sketchfab.com/3d-models/malpas-metal-boat-wreck-7a2c49c1be2c48a3a4d80a3f27dae205",
+  "tris_source": 664370,
+  "tris_after_cut": 430228,
+  "tris_final": 80000,
+  "bbox_min": [
+    -2.223,
+    -5.063,
+    -0.028
+  ],
+  "bbox_max": [
+    2.764,
+    5.063,
+    3.952
+  ],
+  "size_m": [
+    4.987,
+    10.125,
+    3.98
+  ],
+  "z_cut_scan": 1.12,
+  "texture": 4096
+}

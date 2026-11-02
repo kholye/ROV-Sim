@@ -1,0 +1,52 @@
+# Авторство, источники и лицензии
+
+## Работы, на которых основан проект
+
+Холопов и Дунаев разрешили использовать свои работы; статья Игнатьевой и Кузьменко цитируется как публикация. Ссылки на разделы — в [`physics-sources.md`](physics-sources.md).
+
+- **Холопов** (автор проекта), магистерская диссертация, СПбГМТУ, 2026: аппарат (корпус, цистерны, датчики, батарея, лампа, камера), система технического зрения, кадры мишени и программы обработки (`data/Kholopov-progs`: контраст, ΔE CIEDE2000), данные для проверки света V5.
+- **Дунаев**, выпускная квалификационная работа, СПбГМТУ, 2026: математическая модель аппарата (ф. 8-32, код прил. А), ПИД глубины (разд. 2.4), опыты в бассейне (рис. 48-49, т. 9: калибровка и проверка V3), шум датчиков по Аллану (т. 5-8: V4), паспорт модуля SSAH-RS220 (прил. Б).
+- **Игнатьева Н. В., Кузьменко А. В.** «Влияние дальности наблюдения на контрастность изображений подводных объектов», *Морские интеллектуальные технологии*, 2024: метод оценки контраста, осветитель СДВС5 и камера ПВК2HD (т. 1), кривые рис. 10-13 (оцифрованы для V5).
+- **Преподаватель** — первая версия симулятора (сборка Unity): правила колец и осмотра судна, штрафы, раскладка бассейна 12 × 25 × 5 м и колец, формат таблицы лидеров.
+- **Пульт управления** на MATLAB (`data/ROV-pult`): протокол 26-символьного кадра, микширование джойстика, шкала ПИД 0,0-9,9 — по нему сделано управление игры.
+
+## Источники физики и света
+
+Полные ссылки на формулы и таблицы — в [`physics-sources.md`](physics-sources.md) (раздел указан в скобках).
+
+**Движение аппарата**
+- Fossen T. I. *Handbook of Marine Craft Hydrodynamics and Motion Control.* Wiley, 2011 — уравнения 6 ст. св., кинематика, присоединённые массы, течение, движители, рули (1, 6-9).
+- Newman J. N. *Marine Hydrodynamics.* MIT Press, 1977, гл. 4 — полосовая теория присоединённых масс (6).
+- Lamb H. *Hydrodynamics*, § 373 — продольная присоединённая масса эллипсоида (6, V1(д)).
+- DNV-RP-H103 *Modelling and Analysis of Marine Operations*, табл. A-1, A-2 — присоединённые массы круга и пластины (6, 7а).
+- Hoerner S. F. *Fluid-Dynamic Drag.* 1965, гл. 3 — коэффициенты сопротивления, поперечное обтекание (7, 7а).
+- Jones R. T. NACA Report 835, 1946 — подъёмная сила крыла малого удлинения (7а).
+- IEEE Std 952 — дисперсия Аллана для гироскопов (11).
+
+**Свет в воде**
+- Pope R. M., Fry E. S. Absorption spectrum (380-700 nm) of pure water. *Appl. Opt.* 36, 8710 (1997); таблица с https://omlc.org/spectra/water/ (17).
+- Morel A. Optical properties of pure water and pure sea water, 1974 — рассеяние чистой воды (17).
+- Babin M. et al., 2003 — спектральный наклон рассеяния взвесью (17).
+- Jaffe J. S., 1990; McGlamery B. L., 1980 — модель однократного рассеяния для подводной съёмки (18).
+- Akkaynak D., Treibitz T. A revised underwater image formation model. CVPR 2018 — раздельные прямой сигнал и вуаль, проверка линейности кадра (18, V5).
+- Mobley C. D. et al. Phase function effects on oceanic light fields. *Appl. Opt.* 41, 1035 (2002) — фазовая функция Фурнье-Форанд (18).
+- Mobley C. D. *Light and Water.* Academic Press, 1994; Kirk J. T. O. *Light and Photosynthesis in Aquatic Ecosystems*, 1984/2011 — свет сверху, видимость, мутность (20, 23, 24, 26).
+- Alldredge A. L., Silver M. W. Characteristics, dynamics and significance of marine snow, 1988 — видимая взвесь (24).
+
+## 3D-модели
+- **«Malpas Metal Boat Wreck»** — artfletch, https://sketchfab.com/3d-models/malpas-metal-boat-wreck-7a2c49c1be2c48a3a4d80a3f27dae205, лицензия **CC BY 4.0** (http://creativecommons.org/licenses/by/4.0/). Изменено: срезана грунтовая подложка, упрощено с 664 до 80 тыс. треугольников, текстура уменьшена до 4096², судно поставлено на дно с креном и наносами ила (`blender/build_wreck_scan.py`, `build_wreck_site.py`). Используется в сцене «корабль» (`godot/assets/wreck/wreck_site.glb`).
+- Аппарат, бассейны, кольца, бочки, якорь, камни — свои, собраны скриптами Blender (`blender/*.py`).
+
+## Текстуры
+- **Poly Haven** (https://polyhaven.com), лицензия **CC0**: brown_mud_02, brown_mud_03, dense_sand, rock_boulder_dry, rust_coarse_01, green_metal_rust, concrete_wall_006, rubber_tiles, anti_skid_tiles (`godot/assets/textures/`, скачивает `work/tools/get_polyhaven.py`).
+- Плитка бассейна `pool_tiles` — своя (`work/tools/make_pool_tiles.py`).
+
+## Шрифт и звук
+- **PT Mono** — ParaType, лицензия **SIL Open Font License 1.1** (`godot/assets/fonts/PTMono-Regular.ttf`, текст лицензии рядом: `PTMono-OFL.txt`), взят из https://github.com/google/fonts/tree/main/ofl/ptmono. Весь интерфейс.
+- Звук синтезируется в игре (`godot/game/rov_audio.gd`), чужих записей нет.
+
+## Программы и инструменты
+- **Godot Engine** 4.7.2 — лицензия MIT, © Juan Linietsky, Ariel Manzur и участники Godot Engine (https://godotengine.org/license). Движок входит в сборку `.exe`; тексты лицензий движка и его сторонних библиотек лежат в сборке, в папке `licenses/`.
+- **Blender** 4.5 LTS (GPL) — построение моделей и сцен; в сборку не входит, `.glb` — наши данные.
+- **Python** 3.12, **NumPy**, **SciPy**, **matplotlib** (BSD-подобные лицензии) — эталон физики и проверки.
+- Разработано с помощью ИИ-помощника Claude (Anthropic).

@@ -1,0 +1,28 @@
+# Чужие и большие данные: только на диске автора, не в git
+/data/
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+
+# Godot
+.godot/
+*.import.tmp
+/build/
+
+# Blender: автосохранения и резервные копии
+*.blend1
+*.blend2
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Blender-файлы судна: собираются скриптами из скана в data/models (по 30 МБ)
+/blender/wreck_scan.blend
+/blender/wreck_site.blend
+
+# Видео: клипы Movie Maker
+/video/
+

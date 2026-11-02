@@ -1,0 +1,105 @@
+{
+  "sink": {
+    "w_terminal_formula": 0.13571483746226606,
+    "w_terminal_sim": 0.13571482003415147,
+    "tau_s": 3.7168928171087217,
+    "max_rel_error_curve": 0.0026664832421205878,
+    "ok": true
+  },
+  "rise": {
+    "w_terminal_formula": -0.1357148374622689,
+    "w_terminal_sim": -0.13571482017645067,
+    "tau_s": 3.6892146930882563,
+    "max_rel_error_curve": 0.0026921871373712463,
+    "ok": true
+  },
+  "ballast_drop": {
+    "net_up_force_N": 8.521354558661017,
+    "w_terminal_formula": -0.47858987699887734,
+    "w_terminal_sim": -0.47857752527988506,
+    "rel_error": 2.5808567180172797e-05,
+    "ok": true
+  },
+  "surge_low": {
+    "thrust_cmd": 0.18424121042994063,
+    "u_terminal_formula": 0.3,
+    "u_terminal_sim": 0.29979222839865,
+    "theta_end_deg": 0.013225471292763712,
+    "rel_error": 0.0006925720044999769,
+    "ok": true
+  },
+  "surge_full": {
+    "u_terminal_formula": 1.6283002011326762,
+    "u_sim_at_60s": 1.1828336448516172,
+    "theta_max_deg": 6922.606768862831,
+    "max_abs_sway_heave": 0.540523424562061,
+    "note": "на полной тяге корпус без плоскостей теряет устойчивость по дифференту; это не проверка формулы, а находка (см. stability)"
+  },
+  "yaw": {
+    "r_terminal_formula": 2.7001661360475775,
+    "r_terminal_sim": 2.7041025839462183,
+    "rel_error": 0.0014578539616835716,
+    "ok": true
+  },
+  "equilibrium": {
+    "max_depth_drift_m": 1.3673817633730323e-10,
+    "ok": true,
+    "max_speed": 2.631090959963532e-12
+  },
+  "trim": {
+    "theta_formula_deg": -4.267590576006745,
+    "theta_sim_last60s_deg": -4.265721343999071,
+    "theta_amplitude_last60s_deg": 0.11965794733095865,
+    "rel_error": 0.0004380064053433653,
+    "ok": true
+  },
+  "added_mass": {
+    "names": [
+      "X_u'",
+      "Z_w'",
+      "M_q'"
+    ],
+    "model": [
+      0.3823,
+      10.425998511529999,
+      0.40184746986895287
+    ],
+    "lamb_spheroid": [
+      0.43845605960347456,
+      5.8837753519797396,
+      0.09879719216926523
+    ],
+    "ratio_model_to_spheroid": [
+      0.8719231759409134,
+      1.771991262042647,
+      4.067397676448981
+    ],
+    "note": "эллипсоид того же L/D имеет объём 2/3 цилиндра; справочное сравнение, не критерий"
+  },
+  "stability": {
+    "u_crit_pitch_formula_bare": 0.47808946105232647,
+    "formula": "W·(z_g − z_b) = (Z_ẇ − X_u̇)·u²  (момент Мунка против восстанавливающего, без плоскостей)",
+    "без плоскостей": {
+      "u_crit_pitch_eigen": 0.1877966101694915,
+      "yaw_unstable_from_speed": 0.02,
+      "yaw_growth_at_0_3_m_s": 0.724746426559429,
+      "yaw_e_fold_time_at_0_3_m_s": 1.3797929363339887
+    },
+    "с плоскостями (оценка по фото)": {
+      "u_crit_pitch_eigen": 0.6240677966101695,
+      "yaw_unstable_from_speed": 0.02,
+      "yaw_growth_at_0_3_m_s": 0.36936862305015256,
+      "yaw_e_fold_time_at_0_3_m_s": 2.707322543377543
+    }
+  },
+  "fins_sink": {
+    "w_terminal_formula": 0.05500707782720373,
+    "w_terminal_sim": 0.05498954284794317,
+    "theta_deg": 0.0721074313045799,
+    "rel_error": 0.0003187767820651112,
+    "ok": true,
+    "heave_damping_lin": 9.62,
+    "note": "носовые плоскости тормозят нос: аппарат падает с небольшим дифферентом"
+  },
+  "all_ok": true
+}

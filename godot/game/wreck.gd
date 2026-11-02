@@ -1,0 +1,181 @@
+extends LevelBase
+## Затонувшее судно в мутной воде. Правила и расстановка по первой версии симулятора (сборка преподавателя), само место — из Blender: blender/build_wreck_site.py -> wreck_site.glb
+## (дно 40 × 40 м на 8 м с наносами ила и размывом, судно-скан «Malpas Metal Boat Wreck», artfletch,
+## CC BY 4.0, якорь с цепью, бочки, камни; точки осмотра — пустые объекты IP_*).
+## Шесть точек осмотра (WreckSurvey): 3 м, 35°, не заслонена, 1,5 с подряд. Каждая осмотренная точка
+## сохраняет кадр; в конце отчёт (время, кадры, касания) в user://survey/<дата>/.
+
+const SEABED := 8.0
+const WRECK_GLB := preload("res://assets/wreck/wreck_site.glb")
+
+var survey := WreckSurvey.new()
+var wreck: Node3D
+var out_dir := ""
+var shots := {}
+var _auto_path: Array = []
+var _auto_i := 0
+var _auto_hold := 0.0
+
+
+func _ready() -> void:
+	setup_level("wreck", "wreck_e_surface")
+	Underwater.set_exposure(float(uw.p["camera_exposure_wreck"]))
+	wreck = WRECK_GLB.instantiate()
+	wreck.position = Vector3(0, -SEABED, 0)
+	add_child(wreck)
+	uw.convert_tree(wreck)
+	for mi in wreck.find_children("*", "MeshInstance3D", true, false):
+		(mi as MeshInstance3D).create_trimesh_collision()
+	var ips := wreck.find_children("IP_*", "", true, false)
+	ips.sort_custom(func(a, b): return String(a.name) < String(b.name))
+	for n in ips:
+		survey.points.append((n as Node3D).global_position)
+		survey.names.append(String(n.name).substr(5))
+	spawn_rov(4.0, -14.0, 0.0, 0.0)          # старт как в сборке: z = −14 м, глубина 4 м
+	rov.touched.connect(func(_c): survey.contact(rov.time))
+	survey.start(rov.camera().global_position, 0.0)
+	out_dir = "user://survey/" + Time.get_datetime_string_from_system().replace(":", "-")
+	if args.has("auto"):
+		_plan_auto()
+
+
+func _visible(from: Vector3, to: Vector3) -> bool:
+	var q := PhysicsRayQueryParameters3D.create(from, to)
+	q.collision_mask = 1
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	return hit.is_empty() or (hit["position"] as Vector3).distance_to(to) < 0.35
+
+
+func _physics_process(delta: float) -> void:
+	if rov == null:
+		return
+	if args.has("auto"):
+		_auto_step(delta)
+		if fmod(rov.time, 5.0) < delta * 0.999:
+			print("AUTO t=%.0f шаг %d/%d камера %s точки %s видна %s" % [rov.time, _auto_i, _auto_path.size(),
+					rov.camera().global_position.snappedf(0.01), survey.done, survey.seen_for])
+	var was := survey.finished()
+	survey.tick(rov.camera().global_transform, rov.time, _visible)
+	if survey.just_done >= 0:
+		_shoot(survey.just_done)
+	if not was and survey.finished():
+		_report()
+
+
+func _shoot(i: int) -> void:
+	var hud_was := hud.visible
+	hud.visible = false                      # кадр без интерфейса
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	DirAccess.make_dir_recursive_absolute(out_dir)
+	var path := out_dir.path_join("IP_%d.png" % (i + 1))
+	get_viewport().get_texture().get_image().save_png(path)
+	hud.visible = hud_was
+	shots[i] = path
+	if audio:
+		audio.beep()
+
+
+func _report() -> void:
+	await get_tree().create_timer(0.3).timeout      # дождаться последнего кадра
+	DirAccess.make_dir_recursive_absolute(out_dir)
+	var rows := []
+	var md := "# Отчёт осмотра судна\n\nВремя осмотра: %.1f с. Касаний судна и дна: %d.\n\n| № | Точка | Время, с | Кадр |\n|---|---|---|---|\n" % [
+		survey.elapsed(rov.time), survey.touches]
+	var csv := "n;point;time_s;frame\n"
+	for i in survey.points.size():
+		var f := String(shots.get(i, "")).get_file()
+		md += "| %d | %s | %.1f | ![](%s) |\n" % [i + 1, survey.names[i], survey.done_time[i], f]
+		csv += "%d;%s;%.1f;%s\n" % [i + 1, survey.names[i], survey.done_time[i], f]
+		rows.append({"n": i + 1, "point": survey.names[i], "time": snappedf(survey.done_time[i], 0.1), "frame": f})
+	var fm := FileAccess.open(out_dir.path_join("report.md"), FileAccess.WRITE)
+	fm.store_string(md)
+	fm.close()
+	var fc := FileAccess.open(out_dir.path_join("report.csv"), FileAccess.WRITE)
+	fc.store_string(csv)
+	fc.close()
+	var res := {"name": String(args.get("name", Settings.get_value("player"))), "time": snappedf(survey.elapsed(rov.time), 0.1),
+			"points": survey.count(), "touches": survey.touches,
+			"date": Time.get_datetime_string_from_system().replace("T", " ").substr(0, 16)}
+	ResultsTable.save_wreck(res)
+	hud.results.show_wreck(ResultsTable.load_wreck(), res, "Отчёт и кадры: %s · Esc — меню" % ProjectSettings.globalize_path(out_dir))
+	hud.results.visible = true
+	print("SURVEY ", JSON.stringify({"dir": ProjectSettings.globalize_path(out_dir), "time": snappedf(survey.elapsed(rov.time), 0.1),
+			"touches": survey.touches, "points": rows}))
+	if args.has("auto"):
+		get_tree().quit()
+
+
+## Автопроверка осмотра (кинематика, без физики): облёт точек обзора около каждой точки осмотра.
+## Проверяет правила осмотра, заслонение, кадры и отчёт; управляемость аппарата проверена на кольцах.
+func _plan_auto() -> void:
+	rov.kinematic = true
+	rov.input_enabled = false
+	# точка обзора: 2,2 м от точки осмотра в сторону от середины судна (по горизонтали) и на 0,7 м выше
+	var center := Vector3(0, -SEABED + 1.5, 0)
+	var pos := rov.global_position
+	for i in survey.points.size():
+		var target: Vector3 = survey.points[i]
+		var away := Vector3(target.x - center.x, 0, target.z - center.z)
+		away = away.normalized() if away.length() > 0.3 else Vector3.BACK
+		var view: Vector3 = target + away * 2.2 + Vector3.UP * 0.7
+		_auto_path.append([Vector3(pos.x, -2.5, pos.z), target])     # подняться над судном
+		_auto_path.append([Vector3(view.x, -2.5, view.z), target])
+		_auto_path.append([view, target])
+		pos = view
+
+
+func _auto_step(delta: float) -> void:
+	if _auto_i >= _auto_path.size():
+		if rov.time > 400:
+			print("SURVEY_TIMEOUT ", survey.done)
+			get_tree().quit()
+		return
+	var goal: Vector3 = _auto_path[_auto_i][0]
+	var look: Vector3 = _auto_path[_auto_i][1]
+	var p := rov.cam_front.global_position
+	var step := 1.5 * delta
+	if p.distance_to(goal) <= step:
+		p = goal
+		_auto_hold += delta
+		if _auto_hold > 2.0 or (_auto_i % 3 != 2):
+			_auto_i += 1
+			_auto_hold = 0.0
+	else:
+		p += (goal - p).normalized() * step
+	var d := (look - p).normalized()
+	var psi := atan2(d.x, -d.z)                 # курс NED: от севера (−Z) к востоку (+X)
+	var theta := asin(clampf(d.y, -1, 1))       # дифферент: нос вверх > 0
+	rov.x[3] = 0.0
+	rov.x[4] = theta
+	rov.x[5] = psi
+	# камера впереди центра аппарата: ставим центр так, чтобы камера оказалась в p
+	var cam_world := NedGodot.basis(rov.x) * rov.cam_front.position
+	var ned := NedGodot.vec_to_ned(p - cam_world)
+	rov.x[0] = ned[0]
+	rov.x[1] = ned[1]
+	rov.x[2] = ned[2]
+
+
+func hud_mission() -> String:
+	var t := "ОСМОТР %d / %d\n%s с" % [survey.count(), survey.points.size(), Hud.num(survey.elapsed(rov.time), 1)]
+	# ближайшая неосмотренная точка
+	var best := -1
+	var cam := rov.camera().global_position
+	for i in survey.points.size():
+		if not survey.done[i] and (best < 0 or cam.distance_to(survey.points[i]) < cam.distance_to(survey.points[best])):
+			best = i
+	if best >= 0:
+		t += "\nближе всего: %s, %s м" % [survey.names[best], Hud.num(cam.distance_to(survey.points[best]), 1)]
+	return t
+
+
+func hud_prompt() -> String:
+	if survey.finished():
+		return "ОСМОТР ЗАВЕРШЁН за %s с" % Hud.num(survey.elapsed(rov.time), 1)
+	if not survey.started:
+		return "отойдите на 0,5 м от старта — пойдёт время"
+	for i in survey.points.size():
+		if not survey.done[i] and survey.seen_for[i] > 0.0:
+			return "%s в кадре: держите %s с" % [survey.names[i], Hud.num(maxf(WreckSurvey.HOLD - survey.seen_for[i], 0.0), 1)]
+	return ""

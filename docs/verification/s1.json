@@ -1,0 +1,12 @@
+{
+  "sections": 28,
+  "sections_missing": {},
+  "numbers": 89,
+  "numbers_bad": {},
+  "status_count": {
+    "оценка": 63,
+    "проверено": 19,
+    "подогнано": 7
+  },
+  "pass": true
+}

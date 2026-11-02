@@ -1,0 +1,35 @@
+extends SceneTree
+## Замер скорости частей физики: --headless --script res://tests/profile_physics.gd
+
+
+func _init() -> void:
+	var p := RovDynamics.load_params()
+	var dyn := RovDynamics.new(p)
+	var x := RovDynamics.initial_state(1.0, 0.3, 50e-6, 20e-6)
+	var thr := PackedFloat64Array([0.5, 0.5])
+	var tank := PackedInt32Array([1, 0])
+	var vc := PackedFloat64Array([0.1, 0.0, 0.0])
+	var n := 500
+	var t := Time.get_ticks_usec()
+	for i in n: dyn.mass_matrix(x[12], x[13], false)
+	print("mass_matrix  %.1f мкс" % (float(Time.get_ticks_usec() - t) / n))
+	var mm := dyn.mass_matrix(x[12], x[13], false)
+	t = Time.get_ticks_usec()
+	for i in n: RovDynamics.solve6(mm["M"], PackedFloat64Array([1, 2, 3, 4, 5, 6]))
+	print("solve6       %.1f мкс" % (float(Time.get_ticks_usec() - t) / n))
+	t = Time.get_ticks_usec()
+	for i in n: RovDynamics.coriolis_times(mm["Mrb"], x.slice(6, 12))
+	print("coriolis     %.1f мкс" % (float(Time.get_ticks_usec() - t) / n))
+	t = Time.get_ticks_usec()
+	for i in n: dyn.restoring(x.slice(0, 6), 98.0, 98.0, mm["rg"], p["cb"])
+	print("restoring    %.1f мкс" % (float(Time.get_ticks_usec() - t) / n))
+	t = Time.get_ticks_usec()
+	for i in n: dyn.thrust(thr)
+	print("thrust       %.1f мкс" % (float(Time.get_ticks_usec() - t) / n))
+	t = Time.get_ticks_usec()
+	for i in n: RovDynamics.rot_nb(0.1, 0.2, 0.3)
+	print("rot_nb       %.1f мкс" % (float(Time.get_ticks_usec() - t) / n))
+	t = Time.get_ticks_usec()
+	for i in n: dyn.deriv(x, thr, tank, vc, false)
+	print("deriv        %.1f мкс" % (float(Time.get_ticks_usec() - t) / n))
+	quit()

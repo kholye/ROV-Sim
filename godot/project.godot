@@ -1,0 +1,87 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="ROV-Sim"
+config/version="1.0.0"
+run/main_scene="res://scenes/menu.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+
+[shader_globals]
+
+uw_c={
+"type": "vec3",
+"value": Vector3(0.5, 0.35, 0.4)
+}
+uw_b={
+"type": "vec3",
+"value": Vector3(0.27, 0.3, 0.35)
+}
+uw_kd={
+"type": "vec3",
+"value": Vector3(0.35, 0.08, 0.1)
+}
+uw_ff={
+"type": "vec4",
+"value": Vector4(-0.29, 110, 0, 0.8)
+}
+uw_lamp_pos={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+uw_lamp_dir={
+"type": "vec3",
+"value": Vector3(0, 0, -1)
+}
+uw_lamp_i={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+uw_esurf={
+"type": "vec3",
+"value": Vector3(300, 300, 300)
+}
+uw_surface_y={
+"type": "float",
+"value": 0.0
+}
+uw_exposure={
+"type": "float",
+"value": 0.004
+}
+uw_nlights={
+"type": "int",
+"value": 0
+}
+uw_caustics={
+"type": "float",
+"value": 0.0
+}
+uw_time={
+"type": "float",
+"value": 0.0
+}
+uw_halo_lut={
+"type": "sampler2D",
+"value": ""
+}

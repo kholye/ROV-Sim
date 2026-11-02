@@ -1,0 +1,1 @@
+BENCH {"fps_avg":60.0,"fps_min":44.3,"fps_p1":60.0,"fps_p5":60.0,"frames":18000,"scene":"res://scenes/pool_rings.tscn","seconds":300.011217000043,"size":"(1280.0, 720.0)"}

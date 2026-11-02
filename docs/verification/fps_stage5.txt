@@ -1,0 +1,19 @@
+# Этап 5, 2026-11-02, ПК автора, 1280x720, --bench 60 с полным интерфейсом (--pip 1 --forces 1 --graph 1 --light_curve 1)
+== pool_rings filters=1 vsync=0
+BENCH {"fps_avg":120.2,"fps_min":34.3,"fps_p1":75.0,"fps_p5":102.9,"frames":7215,"scene":"res://scenes/pool_rings.tscn","seconds":60.005555555554,"size":"(1280.0, 720.0)"}
+== pool_rings filters=1 vsync=1
+BENCH {"fps_avg":59.8,"fps_min":30.0,"fps_p1":55.4,"fps_p5":60.0,"frames":3587,"scene":"res://scenes/pool_rings.tscn","seconds":60.0109533333338,"size":"(1280.0, 720.0)"}
+== pool_rings filters=0 vsync=0
+BENCH {"fps_avg":102.8,"fps_min":34.9,"fps_p1":61.2,"fps_p5":75.0,"frames":6169,"scene":"res://scenes/pool_rings.tscn","seconds":60.0048610000005,"size":"(1280.0, 720.0)"}
+== pool_rings filters=0 vsync=1
+BENCH {"fps_avg":55.0,"fps_min":17.1,"fps_p1":30.0,"fps_p5":39.5,"frames":3299,"scene":"res://scenes/pool_rings.tscn","seconds":60.006642666666,"size":"(1280.0, 720.0)"}
+== wreck filters=1 vsync=0
+BENCH {"fps_avg":129.1,"fps_min":44.7,"fps_p1":68.6,"fps_p5":94.6,"frames":7745,"scene":"res://scenes/wreck.tscn","seconds":60.0000000000011,"size":"(1280.0, 720.0)"}
+== wreck filters=1 vsync=1
+BENCH {"fps_avg":58.9,"fps_min":18.2,"fps_p1":34.3,"fps_p5":60.0,"frames":3536,"scene":"res://scenes/wreck.tscn","seconds":60.012464333334,"size":"(1280.0, 720.0)"}
+== wreck filters=0 vsync=0
+BENCH {"fps_avg":94.4,"fps_min":40.9,"fps_p1":55.4,"fps_p5":64.3,"frames":5665,"scene":"res://scenes/wreck.tscn","seconds":60.0000000000005,"size":"(1280.0, 720.0)"}
+== wreck filters=0 vsync=1
+BENCH {"fps_avg":56.6,"fps_min":19.0,"fps_p1":30.3,"fps_p5":40.2,"frames":3395,"scene":"res://scenes/wreck.tscn","seconds":60.0041279999989,"size":"(1280.0, 720.0)"}
+== сравнение того же дня: pool_rings без интерфейса и окошка, научный вид, без синхронизации (--bench 30 --no-hud --filters 0 --vsync 0 --pip 0)
+BENCH {"fps_avg":124.9,"fps_min":50.8,"fps_p1":85.5,"fps_p5":100.7,"frames":3748,"seconds":30.0}

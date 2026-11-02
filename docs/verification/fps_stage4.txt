@@ -1,0 +1,32 @@
+== pool_rings  vsync
+BENCH {"fps_avg":37.5,"fps_min":29.2,"fps_p1":29.6,"fps_p5":29.9,"frames":1500,"scene":"res://scenes/pool_rings.tscn","seconds":40.0143916666666,"size":"(1280.0, 720.0)"}
+== pool_rings  novsync
+BENCH {"fps_avg":39.7,"fps_min":33.5,"fps_p1":34.6,"fps_p5":36.0,"frames":795,"scene":"res://scenes/pool_rings.tscn","seconds":20.0185185185185,"size":"(1280.0, 720.0)"}
+== pool_rings --chase vsync
+BENCH {"fps_avg":30.0,"fps_min":30.0,"fps_p1":30.0,"fps_p5":30.0,"frames":1201,"scene":"res://scenes/pool_rings.tscn","seconds":40.0125536666668,"size":"(1280.0, 720.0)"}
+== pool_rings --chase novsync
+BENCH {"fps_avg":37.3,"fps_min":32.3,"fps_p1":34.7,"fps_p5":35.8,"frames":746,"scene":"res://scenes/pool_rings.tscn","seconds":20.0,"size":"(1280.0, 720.0)"}
+== wreck  vsync
+BENCH {"fps_avg":60.0,"fps_min":37.5,"fps_p1":60.0,"fps_p5":60.0,"frames":2400,"scene":"res://scenes/wreck.tscn","seconds":40.0046286666656,"size":"(1280.0, 720.0)"}
+== wreck  novsync
+BENCH {"fps_avg":63.5,"fps_min":41.5,"fps_p1":45.0,"fps_p5":48.0,"frames":1271,"scene":"res://scenes/wreck.tscn","seconds":20.0013888888888,"size":"(1280.0, 720.0)"}
+== wreck --chase vsync
+BENCH {"fps_avg":60.0,"fps_min":58.5,"fps_p1":60.0,"fps_p5":60.0,"frames":2401,"scene":"res://scenes/wreck.tscn","seconds":40.0080936666656,"size":"(1280.0, 720.0)"}
+== wreck --chase novsync
+BENCH {"fps_avg":136.5,"fps_min":66.6,"fps_p1":80.0,"fps_p5":95.5,"frames":2731,"scene":"res://scenes/wreck.tscn","seconds":20.0054163333336,"size":"(1280.0, 720.0)"}
+== lab_pool  vsync
+BENCH {"fps_avg":60.0,"fps_min":33.8,"fps_p1":60.0,"fps_p5":60.0,"frames":2399,"scene":"res://scenes/lab_pool.tscn","seconds":40.0045396666656,"size":"(1280.0, 720.0)"}
+== lab_pool  novsync
+BENCH {"fps_avg":263.2,"fps_min":60.8,"fps_p1":144.0,"fps_p5":150.0,"frames":5265,"scene":"res://scenes/lab_pool.tscn","seconds":20.0000000000002,"size":"(1280.0, 720.0)"}
+== lab_pool --chase vsync
+BENCH {"fps_avg":60.0,"fps_min":48.6,"fps_p1":60.0,"fps_p5":60.0,"frames":2400,"scene":"res://scenes/lab_pool.tscn","seconds":40.0048569999989,"size":"(1280.0, 720.0)"}
+== lab_pool --chase novsync
+BENCH {"fps_avg":50.5,"fps_min":22.3,"fps_p1":39.3,"fps_p5":44.0,"frames":1010,"scene":"res://scenes/lab_pool.tscn","seconds":20.0017763333334,"size":"(1280.0, 720.0)"}
+== pool_rings  vsync (после оптимизации)
+BENCH {"fps_avg":60.0,"fps_min":47.8,"fps_p1":60.0,"fps_p5":60.0,"frames":2400,"scene":"res://scenes/pool_rings.tscn","seconds":40.0053799999989,"size":"(1280.0, 720.0)"}
+== pool_rings  novsync (после оптимизации)
+BENCH {"fps_avg":49.1,"fps_min":36.0,"fps_p1":41.5,"fps_p5":44.0,"frames":982,"scene":"res://scenes/pool_rings.tscn","seconds":20.0127971481481,"size":"(1280.0, 720.0)"}
+== pool_rings --chase vsync (после оптимизации)
+BENCH {"fps_avg":60.0,"fps_min":49.1,"fps_p1":60.0,"fps_p5":60.0,"frames":2400,"scene":"res://scenes/pool_rings.tscn","seconds":40.0047516666656,"size":"(1280.0, 720.0)"}
+== pool_rings --chase novsync (после оптимизации)
+BENCH {"fps_avg":45.0,"fps_min":38.0,"fps_p1":41.1,"fps_p5":43.5,"frames":901,"scene":"res://scenes/pool_rings.tscn","seconds":20.0034603333335,"size":"(1280.0, 720.0)"}

@@ -1,0 +1,23 @@
+{
+  "mechanical_energy": {
+    "dE_total_J": -0.5966825160052736,
+    "max_step_increase_J": -2.218550321231305e-08,
+    "max_balance_error_J": 1.645928766956517e-05,
+    "ok": true
+  },
+  "battery": {
+    "monotonic": true,
+    "E_used_J": 99374.89877725938,
+    "integral_P_J": 99374.89877725719,
+    "soc_end": 0.3610153113601659,
+    "hotel_plus_lamp_runtime_h": 3.5409836065573774,
+    "note": "ёмкость 43,2 Вт·ч подобрана под «до 2 часов» при средней нагрузке ≈21,6 Вт (оценка)",
+    "ok": true
+  },
+  "rest": {
+    "max_speed_10min": 2.6218501380214847e-12,
+    "depth_change_m": -8.746336987996983e-13,
+    "ok": true
+  },
+  "all_ok": true
+}

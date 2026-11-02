@@ -1,0 +1,27 @@
+{
+  "godot_vs_reference": {
+    "depth_mm": 4.831932276516682e-05,
+    "position_mm": 0.003535163580896919,
+    "angle_deg": 6.215202745114529e-05,
+    "tank_ml": 0.0012371832822262712
+  },
+  "godot_vs_python_rk4": {
+    "depth_mm": 4.9960036108132044e-12,
+    "position_mm": 6.382575513354998e-12,
+    "angle_deg": 2.0355549961366507e-13,
+    "tank_ml": 7.054090384733813e-12
+  },
+  "python_rk4_vs_reference": {
+    "depth_mm": 4.831932143289919e-05,
+    "position_mm": 0.003535163578311285,
+    "angle_deg": 6.215202745114529e-05,
+    "tank_ml": 0.0012371832822398237
+  },
+  "final_state_reference": {
+    "depth_m": 1.1518648418892798,
+    "psi_deg": -369.85409458078965,
+    "theta_deg": 1.1971406183626225
+  },
+  "deriv_rel_err_max": 1.865010766548559e-16,
+  "ok": true
+}
