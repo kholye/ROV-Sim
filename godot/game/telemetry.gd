@@ -1,7 +1,7 @@
 class_name Telemetry
 extends RefCounted
 ## Запись телеметрии заплыва в CSV (клавиша F9, значок ЗАП на экране): 10 строк в секунду,
-## user://telemetry/<дата>.csv. Истинное состояние модели (NED, СИ) и то, что видит оператор
+## telemetry/<дата>.csv в папке данных (Paths). Истинное состояние модели (NED, СИ) и то, что видит оператор
 ## (глубина с шумом датчика, цель, команды).
 
 const PERIOD := 0.1
@@ -20,8 +20,7 @@ func active() -> bool:
 
 
 func start(now: float) -> void:
-	DirAccess.make_dir_recursive_absolute("user://telemetry")
-	path = "user://telemetry/" + Time.get_datetime_string_from_system().replace(":", "-") + ".csv"
+	path = Paths.dir("telemetry") + Time.get_datetime_string_from_system().replace(":", "-") + ".csv"
 	_f = FileAccess.open(path, FileAccess.WRITE)
 	_f.store_line(HEADER)
 	started_at = now

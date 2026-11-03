@@ -686,6 +686,7 @@ for ob in bpy.context.selected_objects:
     ob.select_set(False)
 for ob in list(COLL.all_objects):
     ob.select_set(True)
-bpy.ops.export_scene.gltf(filepath=GLB, export_format="GLB", use_selection=True,
+bpy.ops.export_scene.gltf(filepath=GLB, export_format="GLB", export_copyright="ROV-Sim, Kholopov E. G. (Холопов Е. Г.), 2026, CC BY 4.0; ROV Petrovich: SMTU, Dept. of Marine Information Systems and Technologies",  # то же пишет work/tools/stamp_glb.py
+        use_selection=True,
                           export_extras=True, export_yup=True, export_apply=True)
 print(json.dumps({k: v for k, v in rep.items() if k != "parts"}, ensure_ascii=False, indent=1))

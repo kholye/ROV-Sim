@@ -1,9 +1,9 @@
 class_name Settings
 extends RefCounted
-## Настройки игрока: user://settings.cfg (на Windows %APPDATA%\Godot\app_userdata\ROV-Sim\).
+## Настройки игрока: settings.cfg в папке данных (Paths: у .exe — userdata рядом с игрой).
 ## Только вид и интерфейс; физика и свет здесь не настраиваются.
 
-const PATH := "user://settings.cfg"
+const FILE := "settings.cfg"
 const DEFAULTS := {
 	"filters": false,         # стильный вид (Tab, настройки); выкл = научный: только расчёт света и интерфейс
 	"control": "science",     # режим управления: science / assist / boost (MODES), с следующего запуска уровня
@@ -33,12 +33,12 @@ static func _load() -> void:
 	if _cfg != null:
 		return
 	_cfg = ConfigFile.new()
-	_cfg.load(PATH)
+	_cfg.load(Paths.file(FILE))
 	if int(_cfg.get_value("main", "version", 1)) < VERSION:
 		if _cfg.has_section_key("main", "filters"):
 			_cfg.erase_section_key("main", "filters")
 		_cfg.set_value("main", "version", VERSION)
-		_cfg.save(PATH)
+		_cfg.save(Paths.file(FILE))
 
 
 static func get_value(key: String):
@@ -60,7 +60,7 @@ static func override_from_args(args: Dictionary) -> void:
 static func set_value(key: String, v) -> void:
 	_load()
 	_cfg.set_value("main", key, v)
-	_cfg.save(PATH)
+	_cfg.save(Paths.file(FILE))
 
 
 static func toggle(key: String) -> bool:

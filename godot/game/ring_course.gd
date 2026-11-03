@@ -1,6 +1,6 @@
 class_name RingCourse
 extends RefCounted
-## Правила колец как в первой версии симулятора (сборка преподавателя). Только данные и логика, без узлов: проверяется без окна (tests/game_tests.gd).
+## Правила колец как в первой версии симулятора (Семенов Н. Н.). Только данные и логика, без узлов: проверяется без окна (tests/game_tests.gd).
 ## Координаты NED (x север = вдоль бассейна, y восток, z глубина), начало в центре бассейна на поверхности.
 ##
 ## Проход: центр аппарата сменил сторону плоскости кольца, ближе просвет/2 от оси и в сторону оси кольца.
@@ -161,7 +161,9 @@ func _log(s: String) -> void:
 
 ## Таблица лидеров: JSON (поля как leaders_rings.json сборки + режим управления «mode», без него — научный)
 ## + строка в CSV. Возвращает 10 лучших того же режима.
-static func save_result(res: Dictionary, dir := "user://") -> Array:
+static func save_result(res: Dictionary, dir := "") -> Array:
+	if dir == "":
+		dir = Paths.root()
 	var path := dir.path_join("leaders_rings.json")
 	var all: Array = []
 	if FileAccess.file_exists(path):

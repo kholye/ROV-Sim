@@ -114,6 +114,7 @@ func _init() -> void:
 
 	_pult_tests()
 	_results_tests()
+	_credits_tests()
 	process_frame.connect(_finish, CONNECT_ONE_SHOT)      # режимам нужен аппарат в дереве: после старта цикла
 
 
@@ -232,3 +233,13 @@ func _results_tests() -> void:
 	ResultsTable.save_wreck({"name": "б", "time": 95.0, "points": 6, "touches": 0, "date": "2026-11-02 12:05"}, dir)
 	var w := ResultsTable.load_wreck(dir)
 	check("судно: CSV читается, лучший по времени первым", w.size() == 2 and w[0]["name"] == "б" and is_equal_approx(w[0]["time"], 95.0))
+
+
+## Авторы: обе копии на месте и все имена в тексте.
+func _credits_tests() -> void:
+	check("авторы: обе копии текста целы (SHA-256)", Credits.intact())
+	var t := Credits.text()
+	var ok := true
+	for n in ["Холопов Егор Геннадьевич", "Коротицкий", "Кузьменко", "Дунаев", "Павлов", "Семенов", "«Петрович»", "МИСиТ"]:
+		ok = ok and t.contains(n)
+	check("авторы: все имена и кафедра в тексте", ok)

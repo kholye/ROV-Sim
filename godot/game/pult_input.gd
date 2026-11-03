@@ -24,7 +24,7 @@ const KEYS := {
 	"step_prev": [KEY_BRACKETLEFT], "step_next": [KEY_BRACKETRIGHT],
 	"lamp": [KEY_L], "drop": [KEY_X], "emergency": [KEY_SPACE],
 	"cam_swap": [KEY_C], "pip": [KEY_V], "filters": [KEY_TAB],
-	"help": [KEY_F1], "graph": [KEY_F2], "forces": [KEY_F3], "light_curve": [KEY_F4], "record": [KEY_F9],
+	"help": [KEY_F1], "graph": [KEY_F2], "forces": [KEY_F3], "light_curve": [KEY_F4], "record": [KEY_F9], "photo": [KEY_F12],
 	"pause": [KEY_ESCAPE], "start_run": [KEY_ENTER, KEY_KP_ENTER], "reset_run": [KEY_BACKSPACE],
 }
 const PADS := {

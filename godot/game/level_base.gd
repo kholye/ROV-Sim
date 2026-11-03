@@ -18,10 +18,13 @@ var hud: Hud
 var style: StylePass
 var pause: PauseMenu
 var audio: RovAudio
+var place := ""                # звук места: pool / lab / wreck (RovAudio), по сцене
 var args := {}
 var _frames := 0
 var _shot_done := false
 var _lens_set := false
+var _photo_busy := false
+const PHOTO_FONT := preload("res://assets/fonts/PTSans-Regular.ttf")
 var _bench_t := 0.0
 var _bench_fps: Array[float] = []
 var _bench_ms: Array[float] = []
@@ -102,7 +105,7 @@ func spawn_rov(depth: float, north: float, east: float, psi_deg: float) -> void:
 	pause.setup(self)
 	audio = RovAudio.new()
 	add_child(audio)
-	audio.setup(rov)
+	audio.setup(rov, place)
 	apply_settings()
 	match String(args.get("show", "")):        # --show help / pause: для снимков экрана
 		"help":
@@ -146,8 +149,48 @@ func _unhandled_input(ev: InputEvent) -> void:
 		Settings.toggle("filters")
 		apply_settings()
 		get_viewport().set_input_as_handled()
+	elif ev.is_action("photo"):
+		take_photo()
+		get_viewport().set_input_as_handled()
 	elif hud.handle(ev):
 		get_viewport().set_input_as_handled()
+
+
+## Фото-режим (F12): кадр без интерфейса с подписью внизу (аппарат, место, глубина, курс, время, авторы) —
+## в photos/ папки данных (Paths: у .exe — userdata рядом с игрой). Подпись рисуется в сам кадр.
+func take_photo() -> String:
+	if _photo_busy or rov == null:
+		return ""
+	_photo_busy = true
+	var cap := CanvasLayer.new()
+	cap.layer = 30
+	var l := Label.new()
+	var names := {"pool": "бассейн с кольцами", "wreck": "затонувшее судно", "lab": "лаб. бассейн 3 × 3 × 3 м"}
+	l.text = "ТНПА «Петрович» · %s · глубина %s м · курс %03d° · %s\n%s" % [names.get(place, place),
+			Hud.num(rov.depth_meas, 2), posmod(roundi(rad_to_deg(rov.x[5])), 360),
+			Time.get_datetime_string_from_system(false, true), Credits.SHORT]
+	l.add_theme_font_override("font", PHOTO_FONT)
+	l.add_theme_font_size_override("font_size", 16)
+	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
+	l.add_theme_constant_override("shadow_outline_size", 3)
+	l.anchor_top = 1.0
+	l.anchor_bottom = 1.0
+	l.offset_left = 24
+	l.offset_top = -60
+	cap.add_child(l)
+	add_child(cap)
+	var hud_was := hud.visible
+	hud.visible = false
+	await RenderingServer.frame_post_draw
+	await RenderingServer.frame_post_draw
+	var img := get_viewport().get_texture().get_image()
+	hud.visible = hud_was
+	cap.queue_free()
+	var path := Paths.dir("photos") + "ROV-Sim_%s.png" % Time.get_datetime_string_from_system().replace(":", "-")
+	img.save_png(path)
+	rov.say("снимок: " + Paths.shown(path))
+	_photo_busy = false
+	return path
 
 
 func _process(delta: float) -> void:
@@ -156,6 +199,10 @@ func _process(delta: float) -> void:
 		style.set_lens(get_viewport().get_camera_3d() == rov.cam_front, null if _lens_set else rov.lens)
 		_lens_set = true
 	RenderingServer.global_shader_parameter_set("uw_time", Time.get_ticks_msec() / 1000.0)
+	if args.has("photo") and _frames == 30:   # --photo: снимок фото-режима (как F12) и выход — проверка
+		var p := await take_photo()
+		print("PHOTO ", Paths.shown(p))
+		get_tree().quit()
 	var shot_now := rov != null and rov.time >= float(args["shot_t"]) if args.has("shot_t") else _frames == 20
 	if args.has("shot") and shot_now and not _shot_done:
 		_shot_done = true

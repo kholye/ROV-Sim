@@ -1,7 +1,7 @@
 class_name ResultsTable
 extends PanelContainer
-## Таблица результатов в игре: кольца (user://leaders_rings.json, 10 лучших, поля как в сборке
-## преподавателя) и осмотр судна (user://wreck_results.csv). Тот же вид в главном меню и на финише.
+## Таблица результатов в игре: кольца (Paths: leaders_rings.json, 10 лучших, поля как в первой
+## версии симулятора) и осмотр судна (wreck_results.csv). Тот же вид в главном меню и на финише.
 ## Результаты отдельно по режиму управления (Settings.MODES); у осмотра судна — только по правилам версии 1.1
 ## (строки с режимом), старые строки (правила 3 м / 35° / 1,5 с) в таблицу не попадают.
 
@@ -12,6 +12,7 @@ const WRECK_COLS := [["№", 3], ["имя", 14], ["время, с", 9], ["точ
 var title: Label
 var grid: GridContainer
 var foot: Label
+var plain := false              # вид страницы главного меню (без рамки, IBM Plex Mono, цвета MenuKit)
 
 
 func _init() -> void:
@@ -40,8 +41,8 @@ func _init() -> void:
 	box.add_child(foot)
 
 
-static func load_rings(dir := "user://", mode := "science") -> Array:
-	var path := dir.path_join("leaders_rings.json")
+static func load_rings(dir := "", mode := "science") -> Array:
+	var path := (dir if dir != "" else Paths.root()).path_join("leaders_rings.json")
 	if not FileAccess.file_exists(path):
 		return []
 	var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
@@ -51,8 +52,8 @@ static func load_rings(dir := "user://", mode := "science") -> Array:
 
 
 ## Осмотр судна: строки CSV, лучшие по времени (только завершённые осмотры).
-static func load_wreck(dir := "user://", mode := "science") -> Array:
-	var path := dir.path_join("wreck_results.csv")
+static func load_wreck(dir := "", mode := "science") -> Array:
+	var path := (dir if dir != "" else Paths.root()).path_join("wreck_results.csv")
 	var out := []
 	if not FileAccess.file_exists(path):
 		return out
@@ -67,8 +68,8 @@ static func load_wreck(dir := "user://", mode := "science") -> Array:
 
 
 ## Строка в CSV осмотра судна (как rings_results.csv колец).
-static func save_wreck(res: Dictionary, dir := "user://") -> void:
-	var csv := dir.path_join("wreck_results.csv")
+static func save_wreck(res: Dictionary, dir := "") -> void:
+	var csv := (dir if dir != "" else Paths.root()).path_join("wreck_results.csv")
 	var new_file := not FileAccess.file_exists(csv)
 	var c := FileAccess.open(csv, FileAccess.READ_WRITE if not new_file else FileAccess.WRITE)
 	c.seek_end()
@@ -77,6 +78,20 @@ static func save_wreck(res: Dictionary, dir := "user://") -> void:
 	c.store_line("%s;%.1f;%d;%d;%s;%s" % [res["name"], res["time"], res["points"], res["touches"], res["date"],
 			res.get("mode", "science")])
 	c.close()
+
+
+## Вид главного меню: без рамки и фона, моноширинный IBM Plex Mono, цвета MenuKit.
+func set_plain() -> void:
+	plain = true
+	add_theme_stylebox_override("panel", StyleBoxEmpty.new())
+	title.add_theme_color_override("font_color", MenuKit.MUTED)
+	title.add_theme_font_override("font", MenuKit.vf(MenuKit.F_MONO))
+	title.add_theme_font_size_override("font_size", 13)
+	foot.add_theme_color_override("font_color", MenuKit.MUTED)
+	foot.add_theme_font_override("font", MenuKit.vf(MenuKit.F_MONO))
+	foot.add_theme_font_size_override("font_size", 12)
+	grid.add_theme_constant_override("h_separation", 22)
+	grid.add_theme_constant_override("v_separation", 8)
 
 
 func show_rings(rows: Array, highlight: Dictionary = {}, footer := "") -> void:
@@ -96,7 +111,7 @@ func _fill(cols: Array, cells: Array, rows: Array, highlight: Dictionary, footer
 		c.queue_free()
 	grid.columns = cols.size()
 	for c in cols:
-		_cell(String(c[0]), Color(Hud.WHITE, 0.6))
+		_cell(String(c[0]), MenuKit.MUTED if plain else Color(Hud.WHITE, 0.6))
 	if cells.is_empty():
 		_cell("—", Hud.WHITE)
 		_cell("пока нет результатов", Hud.WHITE)
@@ -105,7 +120,7 @@ func _fill(cols: Array, cells: Array, rows: Array, highlight: Dictionary, footer
 	for i in cells.size():
 		var mine: bool = not highlight.is_empty() and rows[i].get("date") == highlight.get("date") \
 				and rows[i].get("name") == highlight.get("name")
-		var col := Hud.AMBER if mine else Hud.WHITE
+		var col := (MenuKit.AMBER if mine else MenuKit.TEXT) if plain else (Hud.AMBER if mine else Hud.WHITE)
 		_cell(str(i + 1), col)
 		for v in cells[i]:
 			_cell(String(v), col)
@@ -118,4 +133,6 @@ func _cell(t: String, col: Color) -> void:
 	l.text = t
 	l.add_theme_font_size_override("font_size", 15)
 	l.add_theme_color_override("font_color", col)
+	if plain:
+		l.add_theme_font_override("font", MenuKit.vf(MenuKit.F_MONO))
 	grid.add_child(l)

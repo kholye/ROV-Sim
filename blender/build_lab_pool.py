@@ -211,6 +211,7 @@ for m in bpy.data.materials:
 os.makedirs(os.path.dirname(GLB), exist_ok=True)
 for o in bpy.context.view_layer.objects:
     o.select_set(o.type in ("MESH", "EMPTY") and o.name not in ("cam", "top"))
-bpy.ops.export_scene.gltf(filepath=GLB, export_format="GLB", use_selection=True, export_apply=True,
+bpy.ops.export_scene.gltf(filepath=GLB, export_format="GLB", export_copyright="ROV-Sim, Kholopov E. G. (Холопов Е. Г.), 2026, CC BY 4.0",  # то же пишет work/tools/stamp_glb.py
+        use_selection=True, export_apply=True,
                           export_yup=True, export_vertex_color="ACTIVE")
 print("LAB glb", os.path.getsize(GLB) // 1024, "КБ", flush=True)

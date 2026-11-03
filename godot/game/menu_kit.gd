@@ -10,27 +10,122 @@ const SCENES := {
 }
 
 
+const BG := Color("0b0806")
+const TEXT := Color("f0e8d8")
+const DIM := Color(0.94, 0.91, 0.85, 0.55)
+const AMBER := Color("f0c27a")
+const MUTED := Color("a39177")
+const SOFT := Color("b8aa92")
+const F_LOGO := "res://assets/fonts/Unbounded-Variable.ttf"
+const F_SANS := "res://assets/fonts/IBMPlexSans-Variable.ttf"
+const F_MONO := "res://assets/fonts/IBMPlexMono-Regular.ttf"
+
+static var _fonts := {}
+
+
+## Шрифт нужной толщины из переменного (Unbounded, IBM Plex Sans); один на путь и толщину.
+static func vf(path: String, weight := 400) -> Font:
+	var key := "%s:%d" % [path, weight]
+	if not _fonts.has(key):
+		if path == F_MONO:
+			_fonts[key] = load(path)
+		else:
+			var fv := FontVariation.new()
+			fv.base_font = load(path)
+			fv.variation_opentype = {TextServerManager.get_primary_interface().name_to_tag("wght"): weight}
+			_fonts[key] = fv
+	return _fonts[key]
+
+
+## Тема страниц меню и паузы (стиль главного меню, docs/ui.md): тёмный фон, IBM Plex Sans, янтарный акцент.
 static func theme() -> Theme:
-	var t := Hud.make_theme(20)
-	var normal := _box(Color(0.06, 0.07, 0.07, 0.9), Color(Hud.WHITE, 0.25))
-	var hover := _box(Color(0.14, 0.12, 0.08, 0.95), Hud.AMBER)
-	var pressed := _box(Hud.AMBER, Hud.AMBER)
+	var t := Theme.new()
+	t.default_font = vf(F_SANS, 500)
+	t.default_font_size = 17
+	t.set_color("font_color", "Label", TEXT)
+	var normal := _box(Color(0, 0, 0, 0), Color(TEXT, 0.16))
+	var hover := _box(Color(AMBER, 0.08), AMBER)
+	var pressed := _box(AMBER, AMBER)
 	for cls in ["Button", "OptionButton"]:
 		t.set_stylebox("normal", cls, normal)
 		t.set_stylebox("hover", cls, hover)
 		t.set_stylebox("focus", cls, hover)
 		t.set_stylebox("pressed", cls, pressed)
-		t.set_color("font_color", cls, Hud.WHITE)
-		t.set_color("font_hover_color", cls, Hud.AMBER)
-		t.set_color("font_focus_color", cls, Hud.AMBER)
-		t.set_color("font_pressed_color", cls, Color.BLACK)
-	t.set_stylebox("normal", "LineEdit", normal)
-	t.set_stylebox("focus", "LineEdit", hover)
-	t.set_color("font_color", "LineEdit", Hud.WHITE)
-	t.set_constant("outline_size", "Label", 0)
-	t.set_color("font_color", "CheckBox", Hud.WHITE)
-	t.set_color("font_hover_color", "CheckBox", Hud.AMBER)
+		t.set_stylebox("hover_pressed", cls, pressed)
+		t.set_color("font_color", cls, TEXT)
+		t.set_color("font_hover_color", cls, Color.WHITE)
+		t.set_color("font_focus_color", cls, Color.WHITE)
+		t.set_color("font_pressed_color", cls, BG)
+		t.set_color("font_hover_pressed_color", cls, BG)
+	var le := StyleBoxFlat.new()
+	le.bg_color = Color(TEXT, 0.04)
+	le.border_width_bottom = 1
+	le.border_color = Color(TEXT, 0.3)
+	le.content_margin_left = 10
+	le.content_margin_right = 10
+	le.content_margin_top = 6
+	le.content_margin_bottom = 6
+	var lef := le.duplicate() as StyleBoxFlat
+	lef.border_color = AMBER
+	t.set_stylebox("normal", "LineEdit", le)
+	t.set_stylebox("focus", "LineEdit", lef)
+	t.set_color("font_color", "LineEdit", TEXT)
+	t.set_color("caret_color", "LineEdit", AMBER)
+	for cls in ["CheckBox"]:
+		t.set_stylebox("normal", cls, StyleBoxEmpty.new())
+		t.set_stylebox("hover", cls, StyleBoxEmpty.new())
+		t.set_stylebox("focus", cls, _underline())
+		t.set_stylebox("pressed", cls, StyleBoxEmpty.new())
+		t.set_stylebox("hover_pressed", cls, StyleBoxEmpty.new())
+		t.set_color("font_color", cls, SOFT)
+		t.set_color("font_hover_color", cls, Color.WHITE)
+		t.set_color("font_focus_color", cls, Color.WHITE)
+		t.set_color("font_pressed_color", cls, TEXT)
+		t.set_color("font_hover_pressed_color", cls, Color.WHITE)
+	t.set_icon("checked", "CheckBox", _check_icon(true))
+	t.set_icon("unchecked", "CheckBox", _check_icon(false))
+	var pm := StyleBoxFlat.new()
+	pm.bg_color = Color("16100a")
+	pm.set_border_width_all(1)
+	pm.border_color = Color(AMBER, 0.4)
+	pm.set_content_margin_all(6)
+	t.set_stylebox("panel", "PopupMenu", pm)
+	t.set_color("font_color", "PopupMenu", TEXT)
+	t.set_color("font_hover_color", "PopupMenu", AMBER)
+	var sl := StyleBoxFlat.new()
+	sl.bg_color = Color(TEXT, 0.15)
+	sl.content_margin_top = 2
+	sl.content_margin_bottom = 2
+	var sa := sl.duplicate() as StyleBoxFlat
+	sa.bg_color = AMBER
+	t.set_stylebox("slider", "HSlider", sl)
+	t.set_stylebox("grabber_area", "HSlider", sa)
+	t.set_stylebox("grabber_area_highlight", "HSlider", sa)
+	t.set_color("default_color", "RichTextLabel", SOFT)
+	t.set_font("mono_font", "RichTextLabel", vf(F_MONO))
 	return t
+
+
+## Значок галочки 18 × 18: рамка цвета текста, включено — янтарный квадрат внутри.
+static func _check_icon(on: bool) -> ImageTexture:
+	var n := 18
+	var img := Image.create(n, n, false, Image.FORMAT_RGBA8)
+	img.fill(Color(0, 0, 0, 0))
+	for i in n:
+		for e in [0, n - 1]:
+			img.set_pixel(i, e, Color(TEXT, 0.5))
+			img.set_pixel(e, i, Color(TEXT, 0.5))
+	if on:
+		img.fill_rect(Rect2i(4, 4, n - 8, n - 8), AMBER)
+	return ImageTexture.create_from_image(img)
+
+
+static func _underline() -> StyleBoxFlat:
+	var s := StyleBoxFlat.new()
+	s.draw_center = false
+	s.border_width_bottom = 1
+	s.border_color = AMBER
+	return s
 
 
 static func _box(bg: Color, border: Color) -> StyleBoxFlat:
@@ -38,20 +133,22 @@ static func _box(bg: Color, border: Color) -> StyleBoxFlat:
 	s.bg_color = bg
 	s.set_border_width_all(1)
 	s.border_color = border
+	s.set_corner_radius_all(4)
 	s.content_margin_left = 16
 	s.content_margin_right = 16
-	s.content_margin_top = 6
-	s.content_margin_bottom = 6
+	s.content_margin_top = 7
+	s.content_margin_bottom = 7
 	return s
 
 
+## Панель поверх игры (пауза): тёмная, без рамки.
 static func panel(w: float) -> PanelContainer:
 	var p := PanelContainer.new()
 	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color(0.02, 0.03, 0.03, 0.9)
-	sb.set_border_width_all(1)
-	sb.border_color = Color(Hud.WHITE, 0.3)
-	sb.set_content_margin_all(24)
+	sb.bg_color = Color(BG, 0.96)
+	sb.border_width_left = 2
+	sb.border_color = Color(AMBER, 0.6)
+	sb.set_content_margin_all(28)
 	p.add_theme_stylebox_override("panel", sb)
 	p.custom_minimum_size = Vector2(w, 0)
 	return p
@@ -66,11 +163,18 @@ static func button(parent: Node, text: String, cb: Callable) -> Button:
 	return b
 
 
+## Заголовок: крупный — Unbounded (страница, пауза), мелкий (size < 20) — подпись раздела моноширинным.
 static func heading(parent: Node, text: String, size := 22) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", size)
-	l.add_theme_color_override("font_color", Hud.AMBER)
+	if size >= 20:
+		l.add_theme_font_override("font", vf(F_LOGO, 700))
+		l.add_theme_font_size_override("font_size", size)
+		l.add_theme_color_override("font_color", TEXT)
+	else:
+		l.add_theme_font_override("font", vf(F_MONO))
+		l.add_theme_font_size_override("font_size", 12)
+		l.add_theme_color_override("font_color", MUTED)
 	parent.add_child(l)
 	return l
 
@@ -79,8 +183,9 @@ static func note(parent: Node, text: String) -> Label:
 	var l := Label.new()
 	l.text = text
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	l.add_theme_font_override("font", vf(F_SANS, 400))
 	l.add_theme_font_size_override("font_size", 15)
-	l.add_theme_color_override("font_color", Color(Hud.WHITE, 0.7))
+	l.add_theme_color_override("font_color", SOFT)
 	parent.add_child(l)
 	return l
 
@@ -89,7 +194,7 @@ static func note(parent: Node, text: String) -> Label:
 static func settings_box(on_change: Callable) -> VBoxContainer:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)
-	heading(v, "НАСТРОЙКИ")
+	heading(v, "ВИД И ЗВУК", 12)
 	for item in [["filters", "Стильный вид (Tab): крупные пиксели, дизеринг, зерно, виньетка"],
 			["pip", "Окошко «со стороны» (V)"], ["forces", "Силы в окошке (F3)"], ["graph", "График глубины (F2)"],
 			["light_curve", "Ослабление света (F4)"], ["vsync", "Вертикальная синхронизация"], ["show_fps", "Показывать кадры в секунду"]]:

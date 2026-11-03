@@ -4,8 +4,8 @@ extends LevelBase
 ## дорожек, лоток, лестницы, иллюминаторы, 10 подводных светильников, кольца с ножками и номерами).
 ## Вода спортивного бассейна (чистая, видимость ≈29 м), свет сверху 300 лк с каустикой, подводные
 ## светильники как неподвижные источники шейдера.
-## Enter: старт заплыва (время пошло), Backspace: вернуть на старт. Итог пишется в user://leaders_rings.json
-## и user://rings_results.csv, на финише — таблица 10 лучших на экране.
+## Enter: старт заплыва (время пошло), Backspace: вернуть на старт. Итог пишется в leaders_rings.json
+## и rings_results.csv папки данных (Paths), на финише — таблица 10 лучших на экране.
 
 const W := 12.0      # восток (X Godot)
 const L := 25.0      # север (−Z Godot)
@@ -22,6 +22,7 @@ var _event_t := -10.0
 
 
 func _ready() -> void:
+	place = "pool"
 	setup_level("swimpool", "pool_e_surface")
 	_build_pool()
 	var s: Array = RingCourse.START

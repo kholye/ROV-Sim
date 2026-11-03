@@ -3,7 +3,7 @@
     blender -b --factory-startup --python blender/build_pool.py -- [--render <папка>]
 Пишет godot/assets/pool/pool.glb и blender/pool_report.json.
 
-Размеры и кольца по первой версии симулятора (сборка преподавателя): чаша 12 × 25 × 5 м, стенки 0,4 м,
+Размеры и кольца по первой версии симулятора (Семенов Н. Н.): чаша 12 × 25 × 5 м, стенки 0,4 м,
 иллюминаторы R 0,45 м на глубине 1,5 м (по одному на стене), полосы глубины через 1 м, кольца:
 труба Ø0,06 м, радиус оси = просвет/2 + 0,03, две ножки Ø0,045 до дна, опоры 0,35 × 0,06 × 0,35 м, номер над кольцом.
 Добавлено для достоверности (типовой спортивный бассейн, оценка): облицовка плиткой 125 мм, разметка
@@ -336,7 +336,8 @@ def export_glb():
     os.makedirs(os.path.dirname(GLB), exist_ok=True)
     for o in bpy.context.view_layer.objects:
         o.select_set(o.type == "MESH" and not o.name.startswith(("hall", "cam")))
-    bpy.ops.export_scene.gltf(filepath=GLB, export_format="GLB", use_selection=True, export_apply=True,
+    bpy.ops.export_scene.gltf(filepath=GLB, export_format="GLB", export_copyright="ROV-Sim, Kholopov E. G. (Холопов Е. Г.), 2026, CC BY 4.0",  # то же пишет work/tools/stamp_glb.py
+        use_selection=True, export_apply=True,
                               export_yup=True)
     log("glb", os.path.getsize(GLB) // 1024, "КБ")
 

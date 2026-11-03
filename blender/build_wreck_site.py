@@ -1442,7 +1442,8 @@ def export_glb():
         me_.color_attributes.default_color_name = nm
     for o in bpy.context.view_layer.objects:
         o.select_set(o.users_collection[0] == coll and o.type in ("MESH", "EMPTY"))
-    bpy.ops.export_scene.gltf(filepath=GLB, export_format="GLB", use_selection=True, export_apply=True,
+    bpy.ops.export_scene.gltf(filepath=GLB, export_format="GLB", export_copyright="ROV-Sim, Kholopov E. G. (Холопов Е. Г.), 2026, CC BY 4.0; wreck scan: Malpas Metal Boat Wreck by artfletch, CC BY 4.0",  # то же пишет work/tools/stamp_glb.py
+        use_selection=True, export_apply=True,
                               export_yup=True, export_attributes=True, export_vertex_color="ACTIVE",
                               export_image_format="JPEG", export_image_quality=88)
     log("glb", os.path.getsize(GLB) // 1024, "КБ")

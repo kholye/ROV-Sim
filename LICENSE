@@ -1,6 +1,15 @@
 MIT License
 
-Copyright (c) 2026 Kholopov (kholye)
+Copyright (c) 2026 Egor Kholopov (Холопов Егор Геннадьевич), https://github.com/kholye/ROV-Sim
+
+ROV-Sim simulates the ROV "Petrovich", a test bed built and developed by the
+Department of Marine Information Systems and Technologies (2350), SMTU:
+E. V. Korotitsky, A. V. Kuzmenko, E. G. Kholopov, A. M. Dunaev, D. A. Pavlov.
+The first version of the simulator was made by N. N. Semenov.
+Аппарат «Петрович»: кафедра МИСиТ (2350) СПбГМТУ — Коротицкий Е. В.,
+Кузьменко А. В., Холопов Е. Г., Дунаев А. М., Павлов Д. А.
+Первая версия симулятора: Семенов Н. Н.
+These lines are part of the copyright notice and must be kept with it.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

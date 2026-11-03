@@ -12,7 +12,7 @@ extends Node3D
 signal touched(collider: Object)
 
 const DT := 0.005                  # шаг физики, с (RK4, этап 2)
-const TOUCH_PAUSE := 0.4           # пауза между касаниями, с (как в сборке преподавателя)
+const TOUCH_PAUSE := 0.4           # пауза между касаниями, с (как в первой версии симулятора, Семенов Н. Н.)
 const ROV_GLB := preload("res://assets/rov/rov.glb")
 
 var p: Dictionary

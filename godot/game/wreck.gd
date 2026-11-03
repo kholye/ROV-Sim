@@ -1,12 +1,12 @@
 extends LevelBase
-## Затонувшее судно в мутной воде. Правила и расстановка по первой версии симулятора (сборка преподавателя), само место — из Blender: blender/build_wreck_site.py -> wreck_site.glb
+## Затонувшее судно в мутной воде. Правила и расстановка по первой версии симулятора (Семенов Н. Н.), само место — из Blender: blender/build_wreck_site.py -> wreck_site.glb
 ## (дно 40 × 40 м на 8 м с наносами ила и размывом, судно-скан «Malpas Metal Boat Wreck», artfletch,
 ## CC BY 4.0, якорь с цепью, бочки, камни, водоросли и сидячая живность; точки осмотра — пустые объекты IP_*).
 ## Придонное течение (rov_params.json, current_wreck_*) и ил от движителей (game/silt_cloud.gd).
 ## Обрастание и живность на дне — экземплярами (game/wreck_life.gd), рыбы, камбала и крабы — game/fauna.gd
 ## (места Home_* из той же сцены). Кабель-трос с физикой и граница места (мутная вода у края) — game/tether.gd.
 ## Шесть точек осмотра (WreckSurvey): 3 м, 35°, не заслонена, 1,5 с подряд. Каждая осмотренная точка
-## сохраняет кадр; в конце отчёт (время, кадры, касания) в user://survey/<дата>/.
+## сохраняет кадр; в конце отчёт (время, кадры, касания) в survey/<дата>/ папки данных (Paths).
 
 const SEABED := 8.0
 ## Блок кабеля на судне обеспечения (Godot): на поверхности в 6 м к югу от середины судна, в сторону старта, —
@@ -28,6 +28,7 @@ var _auto_hold := 0.0
 
 
 func _ready() -> void:
+	place = "wreck"
 	setup_level("wreck", "wreck_e_surface")
 	Underwater.set_exposure(float(uw.p["camera_exposure_wreck"]))
 	wreck = WRECK_GLB.instantiate()
@@ -68,6 +69,8 @@ func _ready() -> void:
 	tether.setup(self, SHIP, Vector3(0, -SEABED, 0), SEABED,   # блок судна обеспечения на поверхности рядом с местом
 			AABB(Vector3(-13, -SEABED - 1, -13), Vector3(26, 8, 26)),     # судно, якорь, бочки, камни
 			not args.has("no-tether"))       # --no-tether: без физики и вида кабеля (замеры), мутность у края остаётся
+	if audio:
+		audio.tether = tether                # шорох кабеля о судно
 	rov.touched.connect(func(_c): survey.contact(rov.time))
 	var tan_h := tan(deg_to_rad(rov.cam_front.fov) * 0.5)        # камера аппарата держит ширину (KEEP_WIDTH)
 	var vp := get_viewport().get_visible_rect().size
@@ -75,7 +78,7 @@ func _ready() -> void:
 	survey.lens = rov.lens                                       # «в кадре» — по проекции объектива DiCam 300
 	survey.frame_h = vp.y / vp.x
 	survey.start(rov.cam_front.global_position, 0.0)
-	out_dir = "user://survey/" + Time.get_datetime_string_from_system().replace(":", "-")
+	out_dir = Paths.dir("survey") + Time.get_datetime_string_from_system().replace(":", "-")
 	if args.has("auto"):
 		_plan_auto()
 	elif args.has("path"):                   # --path "n,e,d;…": автопилот проверок по точкам (показ кабеля и ила)
@@ -161,9 +164,9 @@ func _report() -> void:
 			"points": survey.count(), "touches": survey.touches, "mode": rov.control_mode,
 			"date": Time.get_datetime_string_from_system().replace("T", " ").substr(0, 16)}
 	ResultsTable.save_wreck(res)
-	hud.results.show_wreck(ResultsTable.load_wreck("user://", rov.control_mode), res, "Отчёт и кадры: %s · Esc — меню" % ProjectSettings.globalize_path(out_dir))
+	hud.results.show_wreck(ResultsTable.load_wreck("", rov.control_mode), res, "Отчёт и кадры: %s · Esc — меню" % Paths.shown(out_dir))
 	hud.results.visible = true
-	print("SURVEY ", JSON.stringify({"dir": ProjectSettings.globalize_path(out_dir), "time": snappedf(survey.elapsed(rov.time), 0.1),
+	print("SURVEY ", JSON.stringify({"dir": Paths.shown(out_dir), "time": snappedf(survey.elapsed(rov.time), 0.1),
 			"touches": survey.touches, "points": rows}))
 	if args.has("auto"):
 		get_tree().quit()

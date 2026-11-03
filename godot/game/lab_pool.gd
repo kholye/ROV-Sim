@@ -11,6 +11,7 @@ const LAB_GLB := preload("res://assets/lab/lab_pool.glb")
 
 
 func _ready() -> void:
+	place = "lab"
 	setup_level("pool", "pool_e_surface")
 	var lab := LAB_GLB.instantiate()
 	add_child(lab)

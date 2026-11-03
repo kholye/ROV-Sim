@@ -217,6 +217,11 @@ func _process(_dt: float) -> void:
 	_mm.visible_instance_count = n
 
 
+## Касаний кабеля с судном (не с дном) за последний шаг — для звука (RovAudio).
+func wreck_contacts() -> int:
+	return _wreck_touch
+
+
 ## Для экрана: стравлено, натяжение у аппарата.
 func length() -> float:
 	return cable.length if cable else 0.0
