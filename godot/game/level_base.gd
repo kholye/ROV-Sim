@@ -4,7 +4,8 @@ extends Node3D
 ## звук, режимы запуска для проверок. Уровень сообщает экрану задание (hud_mission) и подсказку (hud_prompt).
 ## Аргументы после «--»:
 ##   --bench <с>     замер кадров/с: аппарат идёт по кругу с лампой, печатает BENCH {...} и выходит
-##   --shot <png>    кадр через 20 кадров, затем выход (снимки для docs/)
+##   --shot <png>    кадр через 20 кадров, затем выход (снимки для docs/); --shot_t <с> — кадр на этой секунде
+##   --stir t,x,y    стик пульта (x, y) t секунд, затем отпущен: ил у дна для снимков
 ##   --auto          автопилот проверки (у уровня свой: кольца / осмотр судна), печатает итог и выходит
 ##   --chase         вид сзади вместо камеры аппарата
 ##   --no-hud        без интерфейса и окошка (снимки сцены);  --show help / pause: справка или пауза открыты
@@ -19,6 +20,8 @@ var pause: PauseMenu
 var audio: RovAudio
 var args := {}
 var _frames := 0
+var _shot_done := false
+var _lens_set := false
 var _bench_t := 0.0
 var _bench_fps: Array[float] = []
 var _bench_ms: Array[float] = []
@@ -40,7 +43,7 @@ func _parse_args() -> void:
 func setup_level(water: String, e_surface_key: String, surface_y := 0.0) -> void:
 	_parse_args()
 	Settings.override_from_args(args)
-	if args.has("auto") or args.has("bench"):     # проверки и замеры — всегда в научном режиме
+	if args.has("auto") or args.has("bench") or args.has("stir") or args.has("path"):     # проверки, замеры и снимки — в научном режиме
 		Settings.override_from_args({"control": "science"})
 	Settings.apply_global()
 	PultInput.ensure_actions()
@@ -65,6 +68,7 @@ func spawn_rov(depth: float, north: float, east: float, psi_deg: float) -> void:
 	rov.setup(uw, depth, north, east, psi_deg)
 	if not args.has("no-particles"):
 		var sus := Suspension.new()
+		sus.rov = rov
 		add_child(sus)
 		sus.setup(uw, uw.bp550, 5.0)
 	if args.has("at"):                       # --at север,восток,глубина,курс (NED, м и °)
@@ -85,7 +89,7 @@ func spawn_rov(depth: float, north: float, east: float, psi_deg: float) -> void:
 		var l := String(args.get("look", "0,-2,0")).split_floats(",")
 		var cam := Camera3D.new()
 		cam.fov = 70.0
-		cam.far = 60.0
+		cam.far = 150.0                      # сфера воды 50 м вокруг аппарата целиком в кадре
 		add_child(cam)
 		cam.look_at_from_position(Vector3(c[0], c[1], c[2]), Vector3(l[0], l[1], l[2]))
 		cam.current = true
@@ -106,6 +110,10 @@ func spawn_rov(depth: float, north: float, east: float, psi_deg: float) -> void:
 		"pause":
 			pause.visible = true             # без остановки дерева: иначе снимок не сделается
 			pause._main()
+	if args.has("stir"):                     # --stir t,x,y: стик (единицы пульта) t секунд, затем отпущен (снимки ила)
+		var st := String(args["stir"]).split_floats(",")
+		rov.input_enabled = false
+		rov.autopilot = func(r): return [st[1], st[2]] if r.time < st[0] else [0, 0]
 	if args.has("bench"):
 		rov.input_enabled = false
 		rov.autopilot = func(_r): return [9000 + 16000, 32767]   # полный ход с поворотом
@@ -144,8 +152,13 @@ func _unhandled_input(ev: InputEvent) -> void:
 
 func _process(delta: float) -> void:
 	_frames += 1
+	if style and rov:                        # объектив DiCam 300 — только у камеры аппарата
+		style.set_lens(get_viewport().get_camera_3d() == rov.cam_front, null if _lens_set else rov.lens)
+		_lens_set = true
 	RenderingServer.global_shader_parameter_set("uw_time", Time.get_ticks_msec() / 1000.0)
-	if args.has("shot") and _frames == 20:
+	var shot_now := rov != null and rov.time >= float(args["shot_t"]) if args.has("shot_t") else _frames == 20
+	if args.has("shot") and shot_now and not _shot_done:
+		_shot_done = true
 		get_viewport().get_texture().get_image().save_png(String(args["shot"]))
 		get_tree().quit()
 	if args.has("bench"):

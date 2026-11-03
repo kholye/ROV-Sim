@@ -23,6 +23,29 @@ global uniform int uw_nlights;
 global uniform sampler2D uw_halo_lut : filter_linear;   // первообразная фазовой функции для ореола
 global uniform float uw_caustics;  // амплитуда каустики у поверхности (0 = нет), спад с глубиной e^(−z/4 м)
 global uniform float uw_time;
+// облако ила (разд. 29, physics_ref/rov/light.py, silt_terms): до 8 клубов — параметры
+// глобальными (массивы материала в каждом из сотен материалов обновлялись 20 раз в секунду — рывки кадров);
+// uw_spN: центр (Godot), масса, кг; uw_ssN: σ по горизонтали, σ по вертикали, высота дна (Y), —
+global uniform vec4 uw_sp0;
+global uniform vec4 uw_ss0;
+global uniform vec4 uw_sp1;
+global uniform vec4 uw_ss1;
+global uniform vec4 uw_sp2;
+global uniform vec4 uw_ss2;
+global uniform vec4 uw_sp3;
+global uniform vec4 uw_ss3;
+global uniform vec4 uw_sp4;
+global uniform vec4 uw_ss4;
+global uniform vec4 uw_sp5;
+global uniform vec4 uw_ss5;
+global uniform vec4 uw_sp6;
+global uniform vec4 uw_ss6;
+global uniform vec4 uw_sp7;
+global uniform vec4 uw_ss7;
+global uniform int uw_nsilt;
+global uniform vec3 uw_silt_a;     // поглощение на массу ила по каналам, м²/кг
+global uniform vec3 uw_silt_b;     // рассеяние на массу ила, м²/кг
+global uniform vec3 uw_silt_k;     // a* + B·b*: ослабление в квазиоднократном приближении, м²/кг
 
 const int UW_STEPS = 10;           // шагов интеграла обратного рассеяния (сгущены к камере; сходится уже с 8, v5_godot)
 const int UW_MAX_LIGHTS = 16;
@@ -148,6 +171,85 @@ vec3 uw_linf(vec3 cam) {
 	return uw_b * Ed / uw_ff.w / (4.0 * PI * uw_c);
 }
 
+// erf (Абрамовиц, Стиган 7.1.26, ошибка < 1,5e-7)
+float uw_erf(float x) {
+	float t = 1.0 / (1.0 + 0.3275911 * abs(x));
+	float y = 1.0 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592)
+			* t * exp(-x * x);
+	return sign(x) * y;
+}
+
+// Один клуб: интеграл концентрации вдоль луча M (точно, с отражением от дна) и точка луча t*, ближайшая к центру;
+// копит Σ M, насыщение рассеяния b*/(2k)·(1 − e^(−2kM)) и Σ M·t* (средняя по массе точка).
+void uw_silt_one(vec4 sp, vec4 ss, vec3 cam, vec3 dir, float D, inout float mm, inout vec3 sat, inout float mt,
+		inout float mt2) {
+	vec3 C = sp.xyz;
+	float sh = ss.x;
+	float sv = ss.y;
+	vec3 inv = vec3(1.0 / (sh * sh), 1.0 / (sv * sv), 1.0 / (sh * sh));
+	float a2 = dot(dir * dir, inv);
+	float a = sqrt(a2);
+	float norm = sp.w / (15.749609945722419 * sh * sh * sv);
+	float M = 0.0;
+	float tstar = 0.0;
+	for (int k = 0; k < 2; k++) {
+		vec3 Ck = k == 0 ? C : vec3(C.x, 2.0 * ss.z - C.y, C.z);
+		vec3 q0 = cam - Ck;
+		float qw = dot(dir * q0, inv);
+		float t0 = -qw / a2;
+		if (k == 0) {
+			tstar = clamp(t0, 0.0, D);
+		}
+		float d2 = max(dot(q0 * q0, inv) - qw * qw / a2, 0.0);
+		if (d2 < 40.0) {
+			M += norm * exp(-0.5 * d2) * 1.2533141373155003 / a
+					* (uw_erf(a * (D - t0) * 0.7071067811865476) + uw_erf(a * t0 * 0.7071067811865476));
+		}
+	}
+	if (M <= 0.0) {
+		return;
+	}
+	mm += M;
+	sat += uw_silt_b / (2.0 * uw_silt_k) * (1.0 - exp(-2.0 * uw_silt_k * M));
+	mt += M * tstar;
+	mt2 += M * (tstar * tstar + 1.0 / a2);
+}
+
+// Облако ила на луче (как silt_terms эталона): Tc — пропускание чёткого изображения e^(−(a* + b*)·M), Tk — яркости
+// с учётом рассеяния вперёд e^(−k·M) (рисунок размыт), S — добавка яркости: освещённость (лампа, свет сверху)
+// одна на луч — в средней по массе точке клубов.
+void uw_silt(vec3 cam, vec3 dir, float D, out vec3 Tc, out vec3 Tk, out vec3 S) {
+	float mm = 0.0;
+	vec3 sat = vec3(0.0);
+	float mt = 0.0;
+	float mt2 = 0.0;
+	if (uw_nsilt > 0) uw_silt_one(uw_sp0, uw_ss0, cam, dir, D, mm, sat, mt, mt2);
+	if (uw_nsilt > 1) uw_silt_one(uw_sp1, uw_ss1, cam, dir, D, mm, sat, mt, mt2);
+	if (uw_nsilt > 2) uw_silt_one(uw_sp2, uw_ss2, cam, dir, D, mm, sat, mt, mt2);
+	if (uw_nsilt > 3) uw_silt_one(uw_sp3, uw_ss3, cam, dir, D, mm, sat, mt, mt2);
+	if (uw_nsilt > 4) uw_silt_one(uw_sp4, uw_ss4, cam, dir, D, mm, sat, mt, mt2);
+	if (uw_nsilt > 5) uw_silt_one(uw_sp5, uw_ss5, cam, dir, D, mm, sat, mt, mt2);
+	if (uw_nsilt > 6) uw_silt_one(uw_sp6, uw_ss6, cam, dir, D, mm, sat, mt, mt2);
+	if (uw_nsilt > 7) uw_silt_one(uw_sp7, uw_ss7, cam, dir, D, mm, sat, mt, mt2);
+	Tc = exp(-mm * (uw_silt_a + uw_silt_b));
+	Tk = exp(-mm * uw_silt_k);
+	S = vec3(0.0);
+	if (mm > 0.0) {
+		float t = mt / mm;
+		float s2 = max(mt2 / mm - t * t, 0.0);    // протяжённость облака вдоль луча: сглаживание у лампы
+		vec3 P = cam + dir * t;
+		vec3 lv = P - uw_lamp_pos;
+		float r = max(length(lv), 0.02);
+		vec3 l = lv / r;
+		float re2 = r * r + s2;
+		vec3 Ein = uw_phase(min(-dot(l, dir), r * inversesqrt(re2))) * uw_lamp_intensity(l) / re2 * exp(-uw_c * (r + t));
+		Ein += uw_esurf * exp(-uw_kd * max(uw_surface_y - P.y, 0.0)) / (4.0 * PI * uw_ff.w) * exp(-uw_c * t);
+		S = sat * Ein;
+	}
+}
+
+const float UW_SILT_BLUR_ALBEDO = 0.15;   // рисунок за облаком размыт: в рассеянной вперёд части — среднее альбедо
+
 // Яркость точки P (нормаль N) для камеры cam; emission — собственная яркость поверхности, кд/м².
 vec3 uw_radiance(vec3 cam, vec3 P, vec3 N, vec3 albedo, vec3 emission) {
 	vec3 V = P - cam;
@@ -159,8 +261,17 @@ vec3 uw_radiance(vec3 cam, vec3 P, vec3 N, vec3 albedo, vec3 emission) {
 	float cos_i = max(-dot(l, N), 0.0);
 	vec3 e_irr = uw_lamp_intensity(l) * cos_i / (r * r) * exp(-uw_c * r) + uw_ambient_e(P, N) + uw_static_e(P, N);
 	vec3 T = exp(-uw_c * D);
-	return albedo / PI * e_irr * T + emission * T + uw_backscatter(cam, dir, D) + uw_static_halo(cam, dir, D)
-			+ uw_linf(cam) * (1.0 - T);
+	vec3 path = uw_backscatter(cam, dir, D) + uw_static_halo(cam, dir, D) + uw_linf(cam) * (1.0 - T);
+	if (uw_nsilt > 0) {
+		vec3 Tc;
+		vec3 Tk;
+		vec3 S;
+		uw_silt(cam, dir, D, Tc, Tk, S);
+		// размытая часть: освещённость гладкой поверхности, обращённой к камере (без рельефа и рисунка)
+		vec3 e_blur = uw_lamp_intensity(l) * max(dot(l, dir), 0.0) / (r * r) * exp(-uw_c * r) + uw_ambient_e(P, vec3(0.0));
+		return (albedo * Tc * e_irr + UW_SILT_BLUR_ALBEDO * (Tk - Tc) * e_blur) / PI * T + emission * Tk * T + path * Tk + S;
+	}
+	return albedo / PI * e_irr * T + emission * T + path;
 }
 
 // Камера: экспозиция, обрезка и кривая sRGB.

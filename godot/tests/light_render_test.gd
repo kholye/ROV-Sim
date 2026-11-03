@@ -9,7 +9,8 @@ extends Node3D
 const W := 1280
 const H := 720
 const HFOV := 54.0
-# (имя, вода, дальность, база лампы, мощность, глубина камеры, свет сверху)
+# (имя, вода, дальность, база лампы, мощность, глубина камеры, свет сверху[, клуб ила: масса кг, σh, σv,
+#  смещение центра от середины пути по вертикали, дно ниже камеры на, м])
 const CASES := [
 	["pool_d1_b01", "pool", 1.0, 0.1, 0.5, 1.5, false],
 	["pool_d2_b05", "pool", 2.0, 0.5, 0.5, 1.5, false],
@@ -17,6 +18,9 @@ const CASES := [
 	["pool_d2_b05_amb", "pool", 2.0, 0.5, 0.5, 2.5, true],
 	["turbid_d15_b02", "turbid", 1.5, 0.2, 0.5, 4.0, true],
 	["pool_amb_only", "pool", 2.0, 0.5, 0.0, 2.0, true],
+	["wreck_silt_thin", "wreck", 2.0, 0.1, 1.0, 7.0, true, [4e-4, 0.3, 0.2, -0.1, 1.0]],
+	["wreck_silt_thick", "wreck", 1.5, 0.1, 1.0, 7.5, true, [3e-3, 0.4, 0.15, -0.15, 0.4]],
+	["wreck_silt_two", "wreck", 2.0, 0.1, 1.0, 7.0, true, [[6e-4, 0.25, 0.2, -0.1, 1.0, 0.3, 0.6], [1.5e-3, 0.4, 0.2, 0.05, 1.0, -0.2, 1.4]]],
 ]
 
 var out_path := "user://light_render_test.json"
@@ -27,6 +31,7 @@ var case_i := -1
 var wait := 0
 var uw: Underwater
 var albedo: Array
+var _silt := []
 
 
 func _ready() -> void:
@@ -80,6 +85,15 @@ func _next_case() -> void:
 	plate.position = Vector3(0, -depth, -float(cs[2]))
 	var I: Vector3 = uw.lamp_intensity("sdvs5", cs[4]) if cs[4] > 0 else Vector3.ZERO
 	Underwater.set_lamp(cam.position + Vector3(cs[3], 0, 0), Vector3(0, 0, -1), I)
+	_silt = []
+	if cs.size() > 7:                     # клуб [масса, σh, σv, по вертикали, дно ниже на[, по x, по пути]] или список клубов
+		var list: Array = cs[7] if cs[7][0] is Array else [cs[7]]
+		for sp: Array in list:
+			var along: float = sp[6] if sp.size() > 6 else 0.5
+			var dx: float = sp[5] if sp.size() > 5 else 0.0
+			_silt.append({"c": Vector3(dx, -depth + float(sp[3]), -float(cs[2]) * along), "m": sp[0], "sh": sp[1],
+					"sv": sp[2], "bed": -depth - float(sp[4])})
+	Underwater.set_silt(_silt)
 	wait = 3
 
 
@@ -114,4 +128,5 @@ func _capture() -> void:
 			"lamp_i": [uw.lamp_intensity("sdvs5", cs[4]).x if cs[4] > 0 else 0.0,
 					uw.lamp_intensity("sdvs5", cs[4]).y if cs[4] > 0 else 0.0,
 					uw.lamp_intensity("sdvs5", cs[4]).z if cs[4] > 0 else 0.0],
-			"esurf": [uw.esurf.x, uw.esurf.y, uw.esurf.z], "exposure": 0.004, "sectors": sectors})
+			"esurf": [uw.esurf.x, uw.esurf.y, uw.esurf.z], "exposure": 0.004, "sectors": sectors,
+			"silt": _silt.map(func(f): return {"c": [f.c.x, f.c.y, f.c.z], "m": f.m, "sh": f.sh, "sv": f.sv, "bed": f.bed})})

@@ -78,11 +78,14 @@ DERIV_STATES = [
     ([1, 2, 1.5, 0.2, -0.15, 0.7, 0.4, -0.1, 0.05, 0.3, -0.2, 0.25, 60e-6, 10e-6], (0.7, -0.4), (0.1, -0.05, 0.02), False),
     ([0, 0, 2.0, -0.1, 0.2, -1.0, -0.2, 0.15, -0.1, -0.1, 0.3, -0.2, 20e-6, 50e-6], (-0.3, 0.9), (0, 0, 0), True),
     ([0, 0, 0.5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 35e-6, 35e-6], (0, 0), (0, 0, 0), True),
+    # с внешней силой кабеля (версия 1.2): сила в NED и точка на кормовом гермовводе
+    ([3, -1, 6.0, 0.1, -0.2, 2.0, 0.3, 0.05, -0.02, 0.1, -0.1, 0.2, 40e-6, 30e-6], (0.5, 0.2), (0.08, 0.03, 0), False,
+     ((-2.0, 0.7, -0.4), (-0.35, 0.0, -0.028))),
 ]
 gd_d = np.loadtxt(OUT / "v2_godot_deriv.csv", delimiter=",", ndmin=2)
 dmax = 0.0
-for k, (xs, thr, vcs, dropped) in enumerate(DERIV_STATES):
-    xd, nud = veh.deriv(np.array(xs, dtype=float), thr, (0, 0), vcs, dropped)
+for k, (xs, thr, vcs, dropped, *ext) in enumerate(DERIV_STATES):
+    xd, nud = veh.deriv(np.array(xs, dtype=float), thr, (0, 0), vcs, dropped, ext[0] if ext else None)
     py = np.concatenate([xd, nud])
     dmax = max(dmax, float(np.abs(py - gd_d[k]).max() / (np.abs(py).max() + 1e-12)))
 res["deriv_rel_err_max"] = dmax

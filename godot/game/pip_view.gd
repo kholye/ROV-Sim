@@ -2,7 +2,7 @@ class_name PipView
 extends Control
 ## Окошко «со стороны» (V): вторая камера в том же мире смотрит на аппарат сбоку / сзади / сверху
 ## (Shift+V), поверх по F3 — векторы сил из физики (RovDynamics.forces): Архимед в ЦВ, вес в ЦМ,
-## тяга каждого движителя, сопротивление с плоскостями. Длина стрелки ∝ √F (иначе тяга 1-15 Н не видна
+## тяга каждого движителя, сопротивление с плоскостями, кабель-трос (у судна). Длина стрелки ∝ √F (иначе тяга 1-15 Н не видна
 ## рядом с весом 80 Н), числа подписаны. Камера следует только за курсом, поэтому дифферент и крен видны.
 ## Стильный вид: окошко считается в 1/3 разрешения и проходит тот же стиль.
 ## Экспозиция общая с камерой аппарата (глобальный параметр шейдера), поэтому окошко получает своё
@@ -143,6 +143,12 @@ func _draw_overlay() -> void:
 	var dw := rov.global_basis * NedGodot.vec(d)
 	if dw.length() > 0.05:
 		_arrow(rov.global_position, dw.normalized(), dw.length(), Hud.WHITE, "сопр. %.1f Н" % dw.length())
+	if rov.ext_force.size() == 6:            # кабель-трос (game/tether.gd): сила NED на кормовом гермовводе
+		var e := rov.ext_force
+		var cw := NedGodot.vec(PackedFloat64Array([e[0], e[1], e[2]]))
+		if cw.length() > 0.05:
+			_arrow(rov.to_global(NedGodot.vec(PackedFloat64Array([e[3], e[4], e[5]]))), cw.normalized(), cw.length(), Hud.RED,
+					"кабель %.1f Н" % cw.length())
 	_label(Vector2(size.x - 160, 16), "СИЛЫ · F3", Hud.WHITE, fs)
 	# плавучесть итог: это она тянет вверх или вниз при пустом ходе
 	var net := B - W

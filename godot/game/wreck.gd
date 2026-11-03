@@ -2,12 +2,16 @@ extends LevelBase
 ## Затонувшее судно в мутной воде. Правила и расстановка по первой версии симулятора (сборка преподавателя), само место — из Blender: blender/build_wreck_site.py -> wreck_site.glb
 ## (дно 40 × 40 м на 8 м с наносами ила и размывом, судно-скан «Malpas Metal Boat Wreck», artfletch,
 ## CC BY 4.0, якорь с цепью, бочки, камни, водоросли и сидячая живность; точки осмотра — пустые объекты IP_*).
+## Придонное течение (rov_params.json, current_wreck_*) и ил от движителей (game/silt_cloud.gd).
 ## Обрастание и живность на дне — экземплярами (game/wreck_life.gd), рыбы, камбала и крабы — game/fauna.gd
-## (места Home_* из той же сцены). Граница места — кабель и мутная вода у края (game/tether.gd).
+## (места Home_* из той же сцены). Кабель-трос с физикой и граница места (мутная вода у края) — game/tether.gd.
 ## Шесть точек осмотра (WreckSurvey): 3 м, 35°, не заслонена, 1,5 с подряд. Каждая осмотренная точка
 ## сохраняет кадр; в конце отчёт (время, кадры, касания) в user://survey/<дата>/.
 
 const SEABED := 8.0
+## Блок кабеля на судне обеспечения (Godot): на поверхности в 6 м к югу от середины судна, в сторону старта, —
+## не над корпусом (иначе кабель с начала лежит на обломках); дальняя точка осмотра — 16,1 м по прямой.
+const SHIP := Vector3(0, 0, 6)
 const WRECK_GLB := preload("res://assets/wreck/wreck_site.glb")
 
 var survey := WreckSurvey.new()
@@ -46,21 +50,39 @@ func _ready() -> void:
 		survey.points.append((n as Node3D).global_position)
 		survey.names.append(String(n.name).substr(5))
 	spawn_rov(4.0, -14.0, 0.0, 0.0)          # старт как в сборке: z = −14 м, глубина 4 м
+	var pc := rov.p                          # придонное течение (rov_params.json, current_wreck_*)
+	var T: float = pc["current_wreck_T"]
+	rov.current = RovEnvironment.Current.new(pc["current_wreck_speed"], deg_to_rad(pc["current_wreck_dir_deg"]),
+			T, float(pc["current_wreck_std"]) * sqrt(2.0 / T), 3)
+	rov.seabed_depth = SEABED
+	if not args.has("no-silt"):              # --no-silt: без ила от движителей (замеры)
+		var silt := SiltCloud.new()
+		add_child(silt)
+		silt.setup(rov, PackedFloat64Array([0, 0, SEABED]), 30.0)
 	if not args.has("no-fauna"):
 		var fauna := Fauna.new()
 		add_child(fauna)
 		fauna.setup(rov, wreck, Vector3(0, -SEABED, 0))
 	tether = Tether.new()
 	add_child(tether)
-	tether.setup(self, Vector3.ZERO, Vector3(0, -SEABED, 0))     # судно обеспечения на поверхности над местом
+	tether.setup(self, SHIP, Vector3(0, -SEABED, 0), SEABED,   # блок судна обеспечения на поверхности рядом с местом
+			AABB(Vector3(-13, -SEABED - 1, -13), Vector3(26, 8, 26)),     # судно, якорь, бочки, камни
+			not args.has("no-tether"))       # --no-tether: без физики и вида кабеля (замеры), мутность у края остаётся
 	rov.touched.connect(func(_c): survey.contact(rov.time))
 	var tan_h := tan(deg_to_rad(rov.cam_front.fov) * 0.5)        # камера аппарата держит ширину (KEEP_WIDTH)
 	var vp := get_viewport().get_visible_rect().size
 	survey.frame_tan = Vector2(tan_h, tan_h * vp.y / vp.x)
+	survey.lens = rov.lens                                       # «в кадре» — по проекции объектива DiCam 300
+	survey.frame_h = vp.y / vp.x
 	survey.start(rov.cam_front.global_position, 0.0)
 	out_dir = "user://survey/" + Time.get_datetime_string_from_system().replace(":", "-")
 	if args.has("auto"):
 		_plan_auto()
+	elif args.has("path"):                   # --path "n,e,d;…": автопилот проверок по точкам (показ кабеля и ила)
+		var ap: RefCounted = load("res://tests/path_autopilot.gd").new()
+		ap.attach(rov, String(args["path"]))
+		rov.input_enabled = false
+		rov.autopilot = func(r): return ap.stick(r)
 
 
 ## Точка не заслонена и различима: доля света от самой поверхности (альбедо 0,15, нормаль к камере) в яркости
@@ -208,12 +230,17 @@ func hud_mission() -> String:
 			best = i
 	if best >= 0:
 		t += "\nближе всего: %s, %s м" % [survey.names[best], Hud.num(cam.distance_to(survey.points[best]), 1)]
+	if tether:
+		t += "\nкабель %s / %s м, %s Н" % [Hud.num(tether.length(), 1), Hud.num(float(rov.p["tether_length_max"]), 0),
+				Hud.num(tether.tension(), 1)]
 	return t
 
 
 func hud_prompt() -> String:
-	if tether and tether.noise > 0.0:
-		return "КАБЕЛЬ НА ПРЕДЕЛЕ: осталось %s м — вернитесь к судну" % Hud.num(maxf(tether.remaining(), 0.0), 1)
+	if tether and tether.at_limit:
+		return "КАБЕЛЬ СТРАВЛЕН ДО ПРЕДЕЛА (%s м) и держит аппарат — вернитесь к судну" % Hud.num(tether.length(), 0)
+	if tether and tether.snag:
+		return "КАБЕЛЬ ЗАЦЕПИЛСЯ (натяжение %s Н) — отойдите назад по своему следу" % Hud.num(tether.tension(), 1)
 	if survey.finished():
 		return "ОСМОТР ЗАВЕРШЁН за %s с" % Hud.num(survey.elapsed(rov.time), 1)
 	if not survey.started:

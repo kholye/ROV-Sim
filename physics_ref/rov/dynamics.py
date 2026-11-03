@@ -278,8 +278,9 @@ class Vehicle:
         return tau
 
     # ---- полная производная ----
-    def deriv(self, x, thr, tank_cmd, vc_n=(0.0, 0.0, 0.0), dropped=False):
-        """Производная состояния и nu' (для акселерометра)."""
+    def deriv(self, x, thr, tank_cmd, vc_n=(0.0, 0.0, 0.0), dropped=False, ext=None):
+        """Производная состояния и nu' (для акселерометра).
+        ext — внешняя сила (кабель-трос): (сила в NED, Н; точка приложения в осях тела, м) или None."""
         p = self.p
         eta, nu = x[:6], x[6:12]
         V1, V2 = x[12], x[13]
@@ -296,6 +297,9 @@ class Vehicle:
         nudot_c = np.concatenate([-skew(nu[3:]) @ vc_b, np.zeros(3)])
 
         tau, _ = self.thrust(thr)
+        if ext is not None:
+            Fb = R.T @ np.asarray(ext[0], dtype=float)
+            tau = tau + np.concatenate([Fb, np.cross(np.asarray(ext[1], dtype=float), Fb)])
         Dv = self.d_lin * nu_r
         rhs = (tau + self.fin_forces(nu_r) + self.drag(nu_r)
                - coriolis(MRB, nu) @ nu
@@ -333,12 +337,12 @@ def clamp_tanks(x, cap):
     return x
 
 
-def rk4_step(veh, x, dt, thr, tank_cmd, vc_n=(0.0, 0.0, 0.0), dropped=False):
-    """Один шаг Рунге-Кутты 4. Входы постоянны на шаге. Тот же алгоритм в GDScript."""
-    k1, a1 = veh.deriv(x, thr, tank_cmd, vc_n, dropped)
-    k2, _ = veh.deriv(x + 0.5 * dt * k1, thr, tank_cmd, vc_n, dropped)
-    k3, _ = veh.deriv(x + 0.5 * dt * k2, thr, tank_cmd, vc_n, dropped)
-    k4, _ = veh.deriv(x + dt * k3, thr, tank_cmd, vc_n, dropped)
+def rk4_step(veh, x, dt, thr, tank_cmd, vc_n=(0.0, 0.0, 0.0), dropped=False, ext=None):
+    """Один шаг Рунге-Кутты 4. Входы (и внешняя сила ext в NED) постоянны на шаге. Тот же алгоритм в GDScript."""
+    k1, a1 = veh.deriv(x, thr, tank_cmd, vc_n, dropped, ext)
+    k2, _ = veh.deriv(x + 0.5 * dt * k1, thr, tank_cmd, vc_n, dropped, ext)
+    k3, _ = veh.deriv(x + 0.5 * dt * k2, thr, tank_cmd, vc_n, dropped, ext)
+    k4, _ = veh.deriv(x + dt * k3, thr, tank_cmd, vc_n, dropped, ext)
     xn = x + dt / 6.0 * (k1 + 2 * k2 + 2 * k3 + k4)
     return clamp_tanks(xn, veh.p["tank_capacity"]), a1
 

@@ -2,6 +2,19 @@
 import numpy as np
 
 
+def bed_profile(z_above, h):
+    """Доля средней по глубине скорости течения на высоте z_above над дном при глубине места h.
+
+    Степенной закон 1/7 (Soulsby 1997, Dynamics of marine sands, гл. 3):
+    u(z)/U = (z / (0,32 h))^(1/7) при z < 0,5 h; 1,07 при z >= 0,5 h. Среднее по глубине = 1,00.
+    """
+    if z_above <= 0.0 or h <= 0.0:
+        return 0.0
+    if z_above < 0.5 * h:
+        return (z_above / (0.32 * h)) ** (1.0 / 7.0)
+    return 1.07
+
+
 class Current:
     """Течение в NED: постоянная часть + Гаусс-Марков первого порядка по скорости.
 
@@ -28,6 +41,10 @@ class Current:
     def velocity(self):
         V = self.V0 + self.dV
         return np.array([V * np.cos(self.dir), V * np.sin(self.dir), 0.0])
+
+    def velocity_at(self, z_above, h):
+        """Скорость на высоте z_above над дном (профиль bed_profile); V0 — средняя по глубине."""
+        return self.velocity() * bed_profile(z_above, h)
 
 
 class Battery:

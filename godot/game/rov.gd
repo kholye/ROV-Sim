@@ -19,6 +19,9 @@ var p: Dictionary
 var dyn: RovDynamics
 var ctl: RovControl
 var battery: RovEnvironment.Battery
+var current: RovEnvironment.Current          # течение сцены (null — стоячая вода, бассейны)
+var seabed_depth := 0.0                      # глубина места для профиля течения у дна, м
+var ext_force := PackedFloat64Array()        # кабель-трос: [сила NED, Н; точка в осях тела, м] (game/tether.gd), пусто — нет
 var x: PackedFloat64Array
 var dropped := false
 var thr := PackedFloat64Array([0.0, 0.0])
@@ -77,6 +80,7 @@ var _rng := RandomNumberGenerator.new()
 var _model: Node3D
 var _body: CharacterBody3D
 var cam_front: Camera3D
+var lens: DicamLens            # объектив DiCam 300 в аквабоксе (табл. 7 Холопова, render/dicam_lens.gd)
 var cam_chase: Camera3D
 var _lamp_pos_body := PackedFloat64Array([0.33, 0.0, 0.0955])   # светодиоды лампы, NED тела (модель этапа 3)
 var _cam_pos_body := PackedFloat64Array([0.40, 0.0, 0.0])       # перед объективом камеры
@@ -107,7 +111,8 @@ func setup(water: Underwater, depth: float, north: float, east: float, psi_deg: 
 	cam_front = Camera3D.new()
 	cam_front.position = NedGodot.vec(_cam_pos_body)
 	cam_front.keep_aspect = Camera3D.KEEP_WIDTH
-	cam_front.fov = float(uw.p["dicam_hfov_water_deg"])
+	lens = DicamLens.new(uw.p)
+	cam_front.fov = rad_to_deg(2.0 * lens.half_water())   # прямолинейный кадр; проекцию объектива даёт StylePass
 	cam_front.near = 0.02
 	cam_front.far = 60.0
 	add_child(cam_front)
@@ -161,6 +166,13 @@ func depth() -> float:
 
 func heading_deg() -> float:
 	return fposmod(rad_to_deg(x[5]), 360.0)
+
+
+## Скорость течения (NED) на глубине depth_m: профиль у дна (RovEnvironment.bed_profile).
+func water_velocity(depth_m: float) -> PackedFloat64Array:
+	if current == null:
+		return PackedFloat64Array([0, 0, 0])
+	return current.velocity_at(seabed_depth - depth_m, seabed_depth)
 
 
 func position_ned() -> PackedFloat64Array:
@@ -295,7 +307,9 @@ func _physics_process(delta: float) -> void:
 			_ctl_acc -= float(p["control_period"])
 			depth_meas = depth() + float(p["depth_noise_sigma"]) * _rng.randfn()
 			tank_cmd = _tank_command()
-		x = dyn.rk4_step(x, h, thr, tank_cmd, PackedFloat64Array([0, 0, 0]), dropped)
+		if current:
+			current.step(h)
+		x = dyn.rk4_step(x, h, thr, tank_cmd, water_velocity(x[2]), dropped, ext_force)
 		power = battery.step(h, thr, tank_cmd, lamp_level / 0.5)   # 7,2 Вт при 50 % (Холопов 3.1.2), ∝ уровню
 	power_avg += (power - power_avg) * (1.0 - exp(-delta / 10.0)) if time > 0.0 else power - power_avg
 	time += delta

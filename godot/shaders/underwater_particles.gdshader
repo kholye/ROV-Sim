@@ -12,7 +12,7 @@ render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabl
 
 uniform float box = 6.0;             // сторона куба вокруг камеры, м
 uniform float albedo_p = 0.5;        // альбедо частиц (оценка)
-uniform vec3 drift = vec3(0.0, -0.001, 0.0);   // оседание и течение, м/с
+uniform vec3 offset = vec3(0.0);   // накопленный снос течением и оседание, м (считает render/suspension.gd)
 uniform float min_px = 1.6;
 uniform float viewport_h = 720.0;
 
@@ -24,7 +24,7 @@ void vertex() {
 	float r = INSTANCE_CUSTOM.w;                      // радиус, м
 	// броуновское блуждание: медленные синусы со случайной фазой
 	vec3 wob = 0.03 * vec3(sin(TIME * 0.31 + seed.x * 40.0), sin(TIME * 0.23 + seed.y * 40.0), sin(TIME * 0.27 + seed.z * 40.0));
-	vec3 p = seed * box + drift * TIME + wob;
+	vec3 p = seed * box + offset + wob;
 	vec3 cam = CAMERA_POSITION_WORLD;
 	p = cam + mod(p - cam, vec3(box)) - vec3(box * 0.5);
 	v_center = p;

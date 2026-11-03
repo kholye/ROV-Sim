@@ -1,0 +1,29 @@
+{
+  "a_max_rel_err": 0.015332324354542237,
+  "a_pass": true,
+  "b_U0_full": 3.5616522648315914,
+  "b_h_threshold": 0.41000000000000003,
+  "b_mdot_at_0.1m_g_s": 4.27957049877975,
+  "b_mdot_at_0.2m_g_s": 1.4001821119940259,
+  "c_balance_rel": 3.609925975831839e-15,
+  "c_pass": true,
+  "e_eroded_g": 49.97643794067428,
+  "e_suspended_end_g": 47.828872295766274,
+  "e_peak_b_10s": 1.6782321612806255,
+  "e_peak_b_60s": 1.1007018457634274,
+  "e_puffs_end": 8,
+  "e_main_puff_60s": {
+    "m_g": 11.568338410470487,
+    "sigma_h": 1.19723344863605,
+    "sigma_z": 0.7717589176085792,
+    "drift_m": 7.045515042927051
+  },
+  "d_ws_model": 0.0004999999999988347,
+  "d_pass": true,
+  "f_line_integral_rel_err": 1.461760837095424e-09,
+  "f_pass": true,
+  "g_godot_vs_python_puffs_rel": 7.271672755081329e-09,
+  "g_godot_vs_python_mass_rel": 3.966409105837089e-09,
+  "g_puffs": 8,
+  "g_pass": true
+}

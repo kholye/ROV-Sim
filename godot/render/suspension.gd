@@ -6,6 +6,10 @@ extends MultiMeshInstance3D
 ## взвесью: n = particles_per_m3_per_bp · b_p550 (оценка, не измерено). Куб следует за камерой в шейдере.
 
 const SHADER := preload("res://shaders/underwater_particles.gdshader")
+const SETTLE := 0.001              # оседание, м/с (оценка)
+
+var rov: Rov                       # течение берётся у аппарата (на глубине камеры); null — только оседание
+var _offset := Vector3.ZERO
 
 
 func setup(uw: Underwater, bp550: float, box := 6.0, seed_ := 11) -> void:
@@ -38,7 +42,13 @@ func setup(uw: Underwater, bp550: float, box := 6.0, seed_ := 11) -> void:
 	name = "Suspension"
 
 
-func _process(_dt: float) -> void:
+func _process(dt: float) -> void:
 	var m := material_override as ShaderMaterial
 	if m:
 		m.set_shader_parameter("viewport_h", get_viewport().get_visible_rect().size.y)
+		var v := Vector3(0, -SETTLE, 0)
+		var cam := get_viewport().get_camera_3d()
+		if rov and cam:
+			v += NedGodot.vec(rov.water_velocity(-cam.global_position.y))
+		_offset += v * dt
+		m.set_shader_parameter("offset", _offset)

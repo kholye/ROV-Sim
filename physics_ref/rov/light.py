@@ -152,9 +152,10 @@ def backscatter(cam, dirs, D, lamp, water, n=2000):
     return np.sum(f * dt[..., None], axis=1)
 
 
-def radiance(cam, dirs, D, normals, albedo, lamp, water, E_surf=(0, 0, 0), up=(0, 0, 1), depth_of=None, n=2000):
+def radiance(cam, dirs, D, normals, albedo, lamp, water, E_surf=(0, 0, 0), up=(0, 0, 1), depth_of=None, n=2000,
+             silt=None):
     """Яркость (N, 3) для лучей из cam в направлениях dirs до поверхности на дальности D.
-    albedo (N, 3); depth_of(X) -> глубина точек (для рассеянного света сверху)."""
+    albedo (N, 3); depth_of(X) -> глубина точек (для рассеянного света сверху); silt — SiltCloud или None."""
     dirs = np.atleast_2d(dirs)
     D = np.atleast_1d(D).astype(float)
     P = cam + dirs * D[:, None]
@@ -170,7 +171,134 @@ def radiance(cam, dirs, D, normals, albedo, lamp, water, E_surf=(0, 0, 0), up=(0
     else:
         Linf = np.zeros(3)
     T = np.exp(-water.c * D[:, None])
-    return albedo / np.pi * E * T + backscatter(cam, dirs, D, lamp, water, n) + Linf * (1 - T)
+    path = backscatter(cam, dirs, D, lamp, water, n) + Linf * (1 - T)
+    if silt:
+        Tc, Tk, S = silt_terms(cam, dirs, D, silt, up, lamp, water, E_surf, depth_of)
+        # размытая часть: освещённость гладкой поверхности, обращённой к камере (без рельефа и рисунка)
+        E_blur = lamp.intensity(l) * (np.maximum(np.sum(l * dirs, axis=-1), 0.0) / r ** 2)[:, None] \
+            * np.exp(-water.c * r[:, None])
+        if depth_of is not None and np.any(E_surf):
+            E_blur = E_blur + ambient_irradiance(water, E_surf, depth_of(P), np.zeros(len(D)))
+        return (albedo * Tc * E + SILT_BLUR_ALBEDO * (Tk - Tc) * E_blur) / np.pi * T + path * Tk + S
+    return albedo / np.pi * E * T + path
+
+
+SILT_BLUR_ALBEDO = 0.15   # рисунок поверхности за облаком размыт: в рассеянной вперёд части — среднее альбедо (как у замера экспозиции)
+
+
+# ---------------- облако ила (разд. 29) ----------------
+
+def silt_star(p):
+    """Поглощение и рассеяние на массу ила в каналах R, G, B, м²/кг: a*(λ) = a*(443)·exp(−S(λ − 443)) в центре
+    полосы камеры, b* постоянно по спектру (Babin и др. 2003; Babin, Stramski 2004)."""
+    lam = np.array(p["camera_band_nm"], float)
+    a = p["silt_a_star_443"] * np.exp(-p["silt_a_slope"] * (lam - 443.0))
+    b = np.full(3, float(p["silt_b_star"]))
+    return a, b
+
+
+class SiltCloud:
+    """Клубы ила для света: центры C (n, 3), массы m (кг), σ по горизонтали sh и по вертикали sv (м), уровень дна
+    bed (координата вдоль up) — отражение от дна; a_star, b_star — из silt_star."""
+
+    def __init__(self, C, m, sh, sv, bed, a_star, b_star):
+        self.C = np.atleast_2d(np.asarray(C, float))
+        self.m = np.atleast_1d(np.asarray(m, float))
+        self.sh = np.atleast_1d(np.asarray(sh, float))
+        self.sv = np.atleast_1d(np.asarray(sv, float))
+        self.bed = np.atleast_1d(np.asarray(bed, float))
+        self.a_star = np.asarray(a_star, float)
+        self.b_star = np.asarray(b_star, float)
+
+    def __bool__(self):
+        return len(self.m) > 0
+
+
+def _sdot(u, w, up, sh, sv):
+    """Скалярное произведение в метрике клуба: горизонтальные части / σh², вертикальные / σv²."""
+    uv = u @ up
+    wv = w @ up
+    return (np.sum(u * w, axis=-1) - uv * wv) / sh ** 2 + uv * wv / sv ** 2
+
+
+def silt_line(cam, dirs, D, C, m, sh, sv, bed, up):
+    """∫₀ᴰ c(t) dt (кг/м²) вдоль лучей для одного клуба с отражением от дна; точная формула через erf.
+    Возвращает интеграл, точку луча t*, ближайшую к центру в метрике клуба (в [0, D]), и 1/a — СКО клуба вдоль луча."""
+    from scipy.special import erf
+    up = np.asarray(up, float)
+    norm = m / ((2 * np.pi) ** 1.5 * sh ** 2 * sv)
+    tot = np.zeros(len(D))
+    t_star = None
+    s_along = None
+    for center in (C, C + 2.0 * (bed - C @ up) * up):
+        q0 = cam - center
+        a2 = _sdot(dirs, dirs, up, sh, sv)
+        qw = _sdot(dirs, np.broadcast_to(q0, dirs.shape), up, sh, sv)
+        q2 = _sdot(q0, q0, up, sh, sv)
+        a = np.sqrt(a2)
+        t0 = -qw / a2
+        d2 = np.maximum(q2 - qw * qw / a2, 0.0)
+        tot += norm * np.exp(-0.5 * d2) * np.sqrt(np.pi / 2) / a * (
+            erf(a * (D - t0) / np.sqrt(2)) + erf(a * t0 / np.sqrt(2)))
+        if t_star is None:
+            t_star = np.clip(t0, 0.0, D)
+            s_along = 1.0 / a
+    return tot, t_star, s_along
+
+
+def silt_terms(cam, dirs, D, cloud, up, lamp, water, E_surf=(0, 0, 0), depth_of=None):
+    """Облако ила на луче: пропускание T_s (N, 3) и добавка яркости S (N, 3).
+
+    Для клуба i: M_i — интеграл концентрации вдоль луча (кг/м²). Возвращает (T_c, T_k, S).
+    Чёткое изображение сквозь облако гаснет как T_c = exp(−Σ (a* + b*)·M_i) (несёт рисунок поверхности).
+    Свет, рассеянный облаком вперёд, из пучка не уходит (рассеяние ила сильно вытянуто вперёд), но рисунок
+    размывает: яркость за облаком гаснет как T_k = exp(−Σ k·M_i), а в части T_k − T_c вместо альбедо поверхности
+    берётся среднее SILT_BLUR_ALBEDO, а освещённость — как у гладкой поверхности, обращённой к камере (radiance). Пелена воды за облаком гаснет как T_k (она гладкая; пелена перед
+    облаком тоже ослабляется — приближение). Свет, рассеянный облаком к камере, — квазиоднократное приближение
+    (Gordon 1973): рассеяние вперёд не выводит свет из пучка, путь туда и обратно гаснет с k = a* + B·b*
+    (B — доля рассеяния назад), поэтому S_i = b*/(2k)·(1 − e^(−2k·M_i))·[β̃(ψ)·I(l)/r²·e^(−c(r+t))
+    + E_d(P)/(4π μ̄_d)·e^(−c t)]; освещённость E — одна на луч, в точке t̄ = Σ M_i t_i / Σ M_i (t_i — точка луча,
+    ближайшая к центру клуба i; так шейдер считает её раз, а не на каждый клуб); сглаживание по протяжённости облака
+    вдоль луча s² = Σ M_i (t_i² + σ_i²)/Σ M_i − t̄²: 1/r² -> 1/(r² + s²), угол рассеяния не меньше atan(s/r). Тонкое облако: S = b*·M·β̃·E
+    (однократное рассеяние); толстое — b*·β̃/(2k)·E: яркость на единицу освещённости 0,03-0,05 1/ср, как
+    у мутной воды по Gordon и др. 1988 (≈ 0,0949·u + 0,0794·u², u = b_b/(a + b_b))."""
+    dirs = np.atleast_2d(dirs)
+    D = np.atleast_1d(D).astype(float)
+    up = np.asarray(up, float)
+    c_star = cloud.a_star + cloud.b_star
+    k = cloud.a_star + water.bb_frac * cloud.b_star
+    tau = np.zeros((len(D), 3))
+    tau_k = np.zeros((len(D), 3))
+    sat = np.zeros((len(D), 3))
+    Msum = np.zeros(len(D))
+    tM = np.zeros(len(D))
+    tM2 = np.zeros(len(D))
+    for i in range(len(cloud.m)):
+        M, t, sa = silt_line(cam, dirs, D, cloud.C[i], cloud.m[i], cloud.sh[i], cloud.sv[i], cloud.bed[i], up)
+        tau += M[:, None] * c_star
+        tau_k += M[:, None] * k
+        sat += cloud.b_star / (2 * k) * (1.0 - np.exp(-2 * k * M[:, None]))
+        Msum += M
+        tM += M * t
+        tM2 += M * (t * t + sa * sa)
+    # освещённость облака — одна на луч: в средней по массе точке клубов на луче, сглаженная по протяжённости
+    # облака вдоль луча s (СКО): r² -> r² + s², угол рассеяния не меньше atan(s/r) (облако не точка у лампы)
+    Mpos = np.maximum(Msum, 1e-30)
+    t = np.where(Msum > 0, tM / Mpos, 0.0)
+    s2 = np.where(Msum > 0, np.maximum(tM2 / Mpos - t * t, 0.0), 0.0)
+    P = cam + dirs * t[:, None]
+    v = P - lamp.pos
+    r = np.maximum(np.linalg.norm(v, axis=-1), 0.02)
+    l = v / r[:, None]
+    re2 = r * r + s2
+    cos_psi = np.minimum(-np.sum(l * dirs, axis=-1), r / np.sqrt(re2))
+    Ein = phase_ff(cos_psi, water.n_ff, water.mu_ff)[:, None] * lamp.intensity(l) / re2[:, None] \
+        * np.exp(-water.c * (r + t)[:, None])
+    if depth_of is not None and np.any(E_surf):
+        Ed = np.asarray(E_surf, float) * np.exp(-water.kd() * depth_of(P)[:, None])
+        Ein = Ein + Ed / (4 * np.pi * water.mu_d) * np.exp(-water.c * t[:, None])
+    S = sat * Ein
+    return np.exp(-tau), np.exp(-tau_k), S
 
 
 def srgb_encode(x):

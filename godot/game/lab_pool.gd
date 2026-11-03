@@ -21,6 +21,13 @@ func _ready() -> void:
 	LevelKit.quad(self, Vector2(S, S), Transform3D(Basis(Vector3.RIGHT, PI / 2), Vector3.ZERO),
 			Underwater.material(Vector3.ZERO, uw.esurf / PI))
 	spawn_rov(1.5, S / 2 - 2.0 - 0.4, 0.0, 0.0)     # камера (0,4 м впереди центра) в 2,0 м от планшета
+	if not args.has("no-silt"):              # ил на дне (по данным автора) поднимают движители
+		var silt := SiltCloud.new()
+		add_child(silt)
+		silt.setup(rov, PackedFloat64Array([0, 0, S]), 5.0)
+		silt.plume.box = PackedFloat64Array([-S / 2, S / 2, -S / 2, S / 2])   # ил остаётся в бассейне
+		if silt.flocs:
+			silt.flocs.set_box(Vector4(-S / 2, S / 2, -S / 2, S / 2))         # те же стенки в осях Godot (x, z)
 
 
 func _unhandled_input(ev: InputEvent) -> void:

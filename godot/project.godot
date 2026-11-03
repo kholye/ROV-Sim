@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="ROV-Sim"
-config/version="1.1.0"
+config/version="1.2.0"
 run/main_scene="res://scenes/menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
@@ -76,6 +76,86 @@ uw_nlights={
 uw_caustics={
 "type": "float",
 "value": 0.0
+}
+uw_nsilt={
+"type": "int",
+"value": 0
+}
+uw_silt_a={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+uw_silt_b={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}
+uw_silt_k={
+"type": "vec3",
+"value": Vector3(1, 1, 1)
+}
+uw_sp0={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+uw_ss0={
+"type": "vec4",
+"value": Vector4(1, 1, 0, 0)
+}
+uw_sp1={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+uw_ss1={
+"type": "vec4",
+"value": Vector4(1, 1, 0, 0)
+}
+uw_sp2={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+uw_ss2={
+"type": "vec4",
+"value": Vector4(1, 1, 0, 0)
+}
+uw_sp3={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+uw_ss3={
+"type": "vec4",
+"value": Vector4(1, 1, 0, 0)
+}
+uw_sp4={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+uw_ss4={
+"type": "vec4",
+"value": Vector4(1, 1, 0, 0)
+}
+uw_sp5={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+uw_ss5={
+"type": "vec4",
+"value": Vector4(1, 1, 0, 0)
+}
+uw_sp6={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+uw_ss6={
+"type": "vec4",
+"value": Vector4(1, 1, 0, 0)
+}
+uw_sp7={
+"type": "vec4",
+"value": Vector4(0, 0, 0, 0)
+}
+uw_ss7={
+"type": "vec4",
+"value": Vector4(1, 1, 0, 0)
 }
 uw_time={
 "type": "float",

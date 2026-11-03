@@ -30,6 +30,23 @@ class Current:
 		var V := V0 + dV
 		return PackedFloat64Array([V * cos(dir), V * sin(dir), 0.0])
 
+	## Скорость на высоте z_above над дном (профиль bed_profile); V0 — средняя по глубине.
+	func velocity_at(z_above: float, h: float) -> PackedFloat64Array:
+		var v := velocity()
+		var k := RovEnvironment.bed_profile(z_above, h)
+		return PackedFloat64Array([v[0] * k, v[1] * k, 0.0])
+
+
+## Доля средней по глубине скорости течения на высоте z_above над дном при глубине места h.
+## Степенной закон 1/7 (Soulsby 1997, Dynamics of marine sands, гл. 3):
+## u(z)/U = (z / (0,32 h))^(1/7) при z < 0,5 h; 1,07 при z >= 0,5 h. Среднее по глубине = 1,00.
+static func bed_profile(z_above: float, h: float) -> float:
+	if z_above <= 0.0 or h <= 0.0:
+		return 0.0
+	if z_above < 0.5 * h:
+		return pow(z_above / (0.32 * h), 1.0 / 7.0)
+	return 1.07
+
 
 class Battery:
 	extends RefCounted

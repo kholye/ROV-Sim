@@ -94,6 +94,39 @@ func apply_globals(surface_y := 0.0, exposure := -1.0) -> void:
 	RenderingServer.global_shader_parameter_set("uw_nlights", 0)
 	RenderingServer.global_shader_parameter_set("uw_halo_lut", halo_lut(nu, k, c180))
 	RenderingServer.global_shader_parameter_set("uw_caustics", 0.0)
+	var ss := silt_star()
+	RenderingServer.global_shader_parameter_set("uw_silt_a", ss[0])
+	RenderingServer.global_shader_parameter_set("uw_silt_b", ss[1])
+	RenderingServer.global_shader_parameter_set("uw_silt_k", ss[2])
+	set_silt([])
+
+
+## Поглощение и рассеяние на массу ила в каналах R, G, B, м²/кг (как silt_star эталона): a*(λ) в центре полосы
+## камеры по экспоненте от 443 нм, b* постоянно (physics-sources.md, разд. 29); третье — k = a* + B·b*
+## (квазиоднократное приближение, B — доля рассеяния назад).
+func silt_star() -> Array:
+	var lam: Array = p["camera_band_nm"]
+	var a443: float = p["silt_a_star_443"]
+	var S: float = p["silt_a_slope"]
+	var av := Vector3(a443 * exp(-S * (float(lam[0]) - 443.0)), a443 * exp(-S * (float(lam[1]) - 443.0)),
+			a443 * exp(-S * (float(lam[2]) - 443.0)))
+	var bs: float = p["silt_b_star"]
+	var bv := Vector3(bs, bs, bs)
+	return [av, bv, av + float(p["phase_ff_bb"]) * bv]
+
+
+## Клубы ила для шейдера (не больше 8, SiltPlume.MAX_PUFFS): [{c: центр Godot, m: кг, sh, sv: σ м, bed: высота дна Y}].
+## Глобальные параметры uw_spN, uw_ssN (одно общее хранилище, а не массивы в каждом материале).
+static func set_silt(puffs: Array) -> void:
+	var n := mini(puffs.size(), 8)
+	for i in n:
+		var f: Dictionary = puffs[i]
+		var c: Vector3 = f.c
+		RenderingServer.global_shader_parameter_set("uw_sp%d" % i, Vector4(c.x, c.y, c.z, f.m))
+		RenderingServer.global_shader_parameter_set("uw_ss%d" % i, Vector4(f.sh, f.sv, f.bed, 0.0))
+	if n != _nsilt:
+		RenderingServer.global_shader_parameter_set("uw_nsilt", n)
+	_nsilt = n
 
 
 static func set_lamp(pos: Vector3, dir: Vector3, intensity: Vector3) -> void:
@@ -138,6 +171,7 @@ static var _all: Array[ShaderMaterial] = []
 static var _lp := PackedVector4Array()
 static var _li := PackedVector4Array()
 static var _ld := PackedVector4Array()
+static var _nsilt := -1
 
 
 static func set_static_lights(lights: Array) -> void:

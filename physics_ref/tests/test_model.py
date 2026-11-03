@@ -146,6 +146,18 @@ class TestCurrent(unittest.TestCase):
         vel_n = dyn.rot_nb(*x[3:6]) @ x[6:9]
         np.testing.assert_allclose(vel_n, vc, atol=0.01 * 0.2)
 
+    def test_bed_profile(self):
+        from rov.environment import bed_profile
+        h = 8.0
+        z = np.linspace(0.0, h, 200001)
+        u = np.array([bed_profile(zi, h) for zi in z])
+        # среднее по глубине = 1 (определение V0 как средней скорости), профиль растёт ко дну до 0
+        self.assertAlmostEqual(np.trapezoid(u, z) / h, 1.0, delta=0.005)
+        self.assertEqual(bed_profile(0.0, h), 0.0)
+        self.assertTrue(np.all(np.diff(u[: len(u) // 2]) >= 0))
+        c = Current(0.1, 0.3)
+        np.testing.assert_allclose(c.velocity_at(1.0, h), c.velocity() * (1.0 / (0.32 * h)) ** (1 / 7))
+
 
 if __name__ == "__main__":
     unittest.main()

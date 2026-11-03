@@ -25,6 +25,8 @@ var touches := 0
 var last_touch := -10.0
 var just_done := -1             # номер точки, осмотренной на этом шаге (для снимка), иначе −1
 var frame_tan := Vector2(tan(deg_to_rad(35.0)), tan(deg_to_rad(35.0)) * 9.0 / 16.0)   # tg половин углов кадра (гор., верт.)
+var lens: DicamLens             # объектив камеры аппарата: «в кадре» — по его проекции (кадр на экране), иначе frame_tan
+var frame_h := 9.0 / 16.0      # высота кадра / ширина
 var _last_t := 0.0
 
 
@@ -75,6 +77,9 @@ func in_frame(cam: Transform3D, p: Vector3) -> bool:
 	var lc := cam.affine_inverse() * p           # оси камеры: x вправо, y вверх, смотрит в −z
 	if lc.z >= -0.05:
 		return false
+	if lens:
+		var f := lens.project(lc.normalized())
+		return absf(f.x) <= FRAME_FILL and absf(f.y) <= frame_h * FRAME_FILL
 	return absf(lc.x / -lc.z) <= frame_tan.x * FRAME_FILL and absf(lc.y / -lc.z) <= frame_tan.y * FRAME_FILL
 
 

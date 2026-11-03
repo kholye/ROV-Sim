@@ -328,8 +328,9 @@ static func solve6(M: PackedFloat64Array, b: PackedFloat64Array) -> PackedFloat6
 
 
 ## Производная состояния (14) и nu' (6) подряд: 20 чисел.
+## ext — внешняя сила (кабель-трос): 6 чисел [сила в NED, Н; точка приложения в осях тела, м] или пусто.
 func deriv(x: PackedFloat64Array, thr: PackedFloat64Array, tank_cmd: PackedInt32Array,
-		vc_n: PackedFloat64Array, dropped: bool) -> PackedFloat64Array:
+		vc_n: PackedFloat64Array, dropped: bool, ext := PackedFloat64Array()) -> PackedFloat64Array:
 	var eta := x.slice(0, 6)
 	var nu := x.slice(6, 12)
 	var R := rot_nb(eta[3], eta[4], eta[5])
@@ -348,6 +349,16 @@ func deriv(x: PackedFloat64Array, thr: PackedFloat64Array, tank_cmd: PackedInt32
 	var w_body := PackedFloat64Array([nu[3], nu[4], nu[5]])
 	var nudot_c := cross(w_body, vcb)   # -S(w) v_c = -(w x v_c); знак ниже
 	var tau := thrust(thr)
+	if ext.size() == 6:
+		var Fb := PackedFloat64Array([0, 0, 0])
+		for i in 3:
+			for j in 3:
+				Fb[i] += R[j * 3 + i] * ext[j]
+		var rr := PackedFloat64Array([ext[3], ext[4], ext[5]])
+		var mo := cross(rr, Fb)
+		for i in 3:
+			tau[i] += Fb[i]
+			tau[3 + i] += mo[i]
 	var tf := fin_forces(nu_r)
 	var td := drag(nu_r)
 	for i in 6:
@@ -406,13 +417,13 @@ func forces(x: PackedFloat64Array, thr: PackedFloat64Array, dropped: bool) -> Di
 			"drag": PackedFloat64Array([td[0] + tf[0], td[1] + tf[1], td[2] + tf[2]])}
 
 
-## Один шаг RK4, входы постоянны на шаге. Возвращает новое состояние (14).
+## Один шаг RK4, входы (и внешняя сила ext, см. deriv) постоянны на шаге. Возвращает новое состояние (14).
 func rk4_step(x: PackedFloat64Array, dt: float, thr: PackedFloat64Array, tank_cmd: PackedInt32Array,
-		vc_n := PackedFloat64Array([0, 0, 0]), dropped := false) -> PackedFloat64Array:
-	var k1 := deriv(x, thr, tank_cmd, vc_n, dropped)
-	var k2 := deriv(_axpy(x, k1, 0.5 * dt), thr, tank_cmd, vc_n, dropped)
-	var k3 := deriv(_axpy(x, k2, 0.5 * dt), thr, tank_cmd, vc_n, dropped)
-	var k4 := deriv(_axpy(x, k3, dt), thr, tank_cmd, vc_n, dropped)
+		vc_n := PackedFloat64Array([0, 0, 0]), dropped := false, ext := PackedFloat64Array()) -> PackedFloat64Array:
+	var k1 := deriv(x, thr, tank_cmd, vc_n, dropped, ext)
+	var k2 := deriv(_axpy(x, k1, 0.5 * dt), thr, tank_cmd, vc_n, dropped, ext)
+	var k3 := deriv(_axpy(x, k2, 0.5 * dt), thr, tank_cmd, vc_n, dropped, ext)
+	var k4 := deriv(_axpy(x, k3, dt), thr, tank_cmd, vc_n, dropped, ext)
 	var xn := PackedFloat64Array()
 	xn.resize(14)
 	for i in 14:

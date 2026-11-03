@@ -3,7 +3,7 @@
 Godot (окно нужно для рендера) пишет пиксели центров секторов:
   Godot --path godot res://tests/light_render_test.tscn -- --out docs/verification/v5_godot_render.json
 Здесь те же лучи считаются эталоном (2000 шагов интеграла против 16 в шейдере), экспозиция та же,
-кодирование sRGB. Критерий: расхождение не больше 3 единиц из 255 в каждом канале (шаг интеграла,
+кодирование sRGB; три случая с илом (один и два клуба) (разд. 29). Критерий: расхождение не больше 3 единиц из 255 в каждом канале (шаг интеграла,
 32-битная арифметика GPU, округление). Заодно проверяется, что вывод Godot переводит линейный цвет в sRGB.
 """
 import json
@@ -31,8 +31,14 @@ for cs in data["cases"]:
     D = np.linalg.norm(v, axis=1)
     dirs = v / D[:, None]
     N = np.array([s["normal"] for s in cs["sectors"]], float)
+    silt = None
+    if cs.get("silt"):
+        fs = cs["silt"] if isinstance(cs["silt"], list) else [cs["silt"]]
+        a_s, b_s = light.silt_star(p)
+        silt = light.SiltCloud([f["c"] for f in fs], [f["m"] for f in fs], [f["sh"] for f in fs],
+                               [f["sv"] for f in fs], [f["bed"] for f in fs], a_s, b_s)
     L = light.radiance(cam, dirs, D, N, alb, lamp, w, E_surf=cs["esurf"], up=(0, 1, 0),
-                       depth_of=lambda X: np.maximum(0.0 - X[..., 1], 0.0), n=2000)
+                       depth_of=lambda X: np.maximum(0.0 - X[..., 1], 0.0), n=2000, silt=silt)
     ref = np.round(255 * light.srgb_encode(cs["exposure"] * L))
     ref_lin = np.round(255 * np.clip(cs["exposure"] * L, 0, 1))
     got = np.array([s["rgb8"] for s in cs["sectors"]], float)
