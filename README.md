@@ -1,6 +1,6 @@
 # ROV-Sim
 
-Версия 1.3.0 · [что нового](CHANGELOG.md)
+Версия 1.4.0 · [что нового](CHANGELOG.md)
 
 **Симулятор настоящего подводного аппарата, где у каждого числа есть источник и проверка.**
 
@@ -8,9 +8,11 @@
 
 ![Бассейн с кольцами: камера аппарата, окошко со стороны с силами](docs/screenshots/01_pool_style.png)
 
-**Скачать для Windows:** [Releases](https://github.com/kholye/ROV-Sim/releases) → `ROV-Sim-1.3.0-windows-x64.zip` (≈126 МБ), распаковать, запустить `ROV-Sim.exe`. Установка не нужна, игра портативная: всё, что она сохраняет, лежит в папке `userdata` рядом с ней. Хватает встроенной видеокарты (60 кадров/с при 1280 × 720 на Ryzen 5 5500U).
+**Скачать для Windows:** [Releases](https://github.com/kholye/ROV-Sim/releases) → `ROV-Sim-1.4.0-windows-x64.zip` (≈126 МБ), распаковать, запустить `ROV-Sim.exe`. Установка не нужна, игра портативная: всё, что она сохраняет, лежит в папке `userdata` рядом с ней. Хватает встроенной видеокарты (60 кадров/с при 1280 × 720 на Ryzen 5 5500U).
 
-**Новое в 1.3:** главное меню в виде гидролокатора бокового обзора над местом крушения и экран погружения с выбором аппарата и сцены; авторы аппарата «Петрович» и симулятора — на заставке, в «Авторах», в свойствах .exe и моделях; звук (интерфейс, музыка меню, гул насосов и судна обеспечения, шорох кабеля, запись гидрофона NOAA); фото-режим F12; игра портативная. Подробно — [CHANGELOG](CHANGELOG.md).
+**Новое в 1.4:** аппарат ложится на дно и не проходит сквозь стены (касание — силами в уравнениях движения); наклон камеры вниз 0-30° (I / K); камера по руководству DiCam 300 — 140° по диагонали, автоэкспозиция; лабораторный бассейн по фото — гладкий бетон, иллюминатор, крышка из 6 секций (открыта одна), кабель; пауза останавливает всё; выбор сцены и «Начать», экран загрузки; настройки короче; стильный вид и гул у судна убраны. Подробно — [CHANGELOG](CHANGELOG.md).
+
+**В 1.3:** главное меню в виде гидролокатора бокового обзора над местом крушения и экран погружения с выбором аппарата и сцены; авторы аппарата «Петрович» и симулятора — на заставке, в «Авторах», в свойствах .exe и моделях; звук (интерфейс, музыка меню, гул насосов и судна обеспечения, шорох кабеля, запись гидрофона NOAA); фото-режим F12; игра портативная. Подробно — [CHANGELOG](CHANGELOG.md).
 
 **В 1.2:** движители у дна поднимают ил — хлопья и бурая муть, которые сносит течение; кабель-трос стал физическим: тонет, сносится течением, цепляется за судно и держит аппарат; течение у судна; камера аппарата по паспорту DiCam 300 (140°). Подробно — [CHANGELOG](CHANGELOG.md).
 
@@ -25,7 +27,7 @@
 
 | | |
 |---|---|
-| ![](docs/screenshots/02_pool_science.png) **Научный вид** (Tab): без фильтров, график глубины (F2), ослабление света по R/G/B (F4) | ![](docs/screenshots/03_pool_overview.png) **Бассейн** 12 × 25 × 5 м: раскладка колец из первой версии симулятора |
+| ![](docs/screenshots/02_pool_science.png) **Камера аппарата**: график глубины (F2), ослабление света по R/G/B (F4) | ![](docs/screenshots/03_pool_overview.png) **Бассейн** 12 × 25 × 5 м: раскладка колец из первой версии симулятора |
 | ![](docs/screenshots/04_wreck_rov.png) **Судно, камера аппарата**: стая тресочки у корпуса; лампа в 10 см от объектива даёт серую пелену в мутной воде — это физика, а не ошибка | ![](docs/screenshots/05_wreck_chase.png) **Судно, вид сзади**: скан настоящего судна в обрастании (актинии, ламинария), гравий у борта, треска |
 | ![](docs/screenshots/06_lab_target.png) **Лабораторный бассейн 3 × 3 × 3 м**: мишень Холопова для проверки света | ![](docs/screenshots/07_menu.png) **Меню**: снимок бокового обзора над местом судна, рамки целей вспыхивают по ходу линии обзора; «Погружение» — выбор аппарата и сцены |
 | ![](docs/screenshots/08_model.png) **Модель аппарата** (Blender, по фото): из неё считаются объём, центры масс и плавучести, сопротивление | ![](docs/verification/v3_pid.png) **Проверка V3**: удержание глубины в модели против опытов Дунаева |
@@ -42,14 +44,14 @@ flowchart LR
     R <-->|"V2: 0,00005 мм"| G
     D["Опыты в бассейне<br/>рис. 48-49, т. 9"] -->|"калибровка и проверка"| R
     G --> L["Свет по R/G/B<br/>шейдер = эталон до 2/255"]
-    L --> S["Стиль: последний проход,<br/>выключается Tab"]
+    L --> S["Объектив DiCam 300:<br/>последний проход"]
 ```
 
 - **Физика** (`godot/physics/*.gd`, без узлов движка): 6 степеней свободы по Fossen, плавучесть и цистерны, присоединённые массы и поперечное обтекание по деталям модели, два движителя, течение, датчики с шумом по Аллану, батарея, ПИД глубины как в пульте. Все числа в одном файле `godot/physics/rov_params.json`. Перевод осей физики (NED) в оси Godot — в одном модуле `ned_godot.gd`.
 - **Свет** (`godot/shaders/underwater.gdshaderinc`): поглощение чистой воды по Pope & Fry, рассеяние взвесью, обратное рассеяние вдоль луча от лампы (фазовая функция Фурнье-Форанд), свет сверху. Стандартное освещение Godot не используется.
 - **Ил** (`godot/physics/silt_plume.gd`, частицы `shaders/silt_flocs.gdshader`): струя движителя по Albertson → напряжение на дне → размыв по Партениадесу → облако клубов (несёт течение и струи, растёт турбулентностью, оседает) и хлопья-частицы той же массы; свет в облаке — тем же расчётом, что вода.
 - **Кабель-трос** (`godot/physics/tether_cable.gd`): цепочка масс по Морисону (вес, сопротивление поперёк и вдоль, течение), нерастяжимые звенья через XPBD с точным решением цепочки, касания с дном и судном с трением, подача с судна; сила кабеля входит в уравнения аппарата.
-- **Камера аппарата** (`godot/render/dicam_lens.gd`): DiCam 300 — 140° на воздухе (Холопов, табл. 7), плоское окно бокса по закону Снелла — 90° в воде.
+- **Камера аппарата** (`godot/render/dicam_lens.gd`): DiCam 300 — 140° по диагонали (руководство пользователя; 122° по горизонтали на воздухе), плоское окно бокса по закону Снелла — 82° в воде; наклон вниз 0-30°; автоэкспозиция.
 - **Управление** повторяет пульт на MATLAB: правый стик — два движителя со смешением «ход ± поворот», цистерны по отдельности, удержание глубины с целью в миллиметрах, ПИД со шкалой 0,0-9,9.
 
 Подробнее: [`docs/physics-sources.md`](docs/physics-sources.md) (источник, формула, проверка и статус каждой модели), [`docs/model.md`](docs/model.md), [`docs/levels.md`](docs/levels.md), [`docs/ui.md`](docs/ui.md).
@@ -82,7 +84,7 @@ flowchart LR
 | R / F, T / G | крестовина + LT / RT | носовая / кормовая цистерна |
 | H, PgUp / PgDn | B, Y / A | удержание глубины, цель на шаг мельче / глубже |
 | L | LB | лампа 0 / 50 / 100 % |
-| Tab | X | стильный вид (по умолчанию выключен; есть в настройках) |
+| I / K | R3 | наклон камеры вверх / вниз |
 | V, F2, F3, F4 | Back | окошко «со стороны», график, силы, ослабление света |
 | Esc | Start | пауза: ПИД, настройки |
 
@@ -125,4 +127,4 @@ Godot_v4.7.2-stable_win64_console.exe --headless --path godot --export-release "
 
 ---
 
-**In English.** ROV-Sim (by Egor Kholopov) simulates «Petrovich», a real small ROV test bed built by the Department of Marine Information Systems and Technologies (2350), SMTU, Saint Petersburg, within three master's theses (Kholopov, Dunaev, Pavlov), together with E. V. Korotitsky and A. V. Kuzmenko; the first simulator version was made by N. N. Semenov, head of the department. The vehicle: one hull, two thrusters, two 70 ml piston ballast tanks, no vertical thrusters. 6-DOF Fossen dynamics with mass properties computed from the 3D model, verified against an independent Python reference (5·10⁻⁵ mm depth error over 60 s) and calibrated/validated against pool experiments; physically based underwater light per RGB channel with backscatter, checked against target images and a 2024 paper. Since 1.3: a side-scan-sonar main menu, vehicle and scene selection, sound, a photo mode, and a portable build (all data next to the .exe). Since 1.2: thruster-induced sediment plumes (jet → bed shear → erosion → drifting, settling cloud with visible flocs matched to a real turbid frame), a lumped-mass tether with drag, friction and snagging that pulls on the vehicle, a seabed current, and the vehicle camera modelled from its datasheet (140° lens behind a flat port). Every parameter is tagged *verified*, *fitted* or *estimate*, and failed checks are reported. Windows build: see Releases. Interface is in Russian.
+**In English.** ROV-Sim (by Egor Kholopov) simulates «Petrovich», a real small ROV test bed built by the Department of Marine Information Systems and Technologies (2350), SMTU, Saint Petersburg, within three master's theses (Kholopov, Dunaev, Pavlov), together with E. V. Korotitsky and A. V. Kuzmenko; the first simulator version was made by N. N. Semenov, head of the department. The vehicle: one hull, two thrusters, two 70 ml piston ballast tanks, no vertical thrusters. 6-DOF Fossen dynamics with mass properties computed from the 3D model, verified against an independent Python reference (5·10⁻⁵ mm depth error over 60 s) and calibrated/validated against pool experiments; physically based underwater light per RGB channel with backscatter, checked against target images and a 2024 paper. Since 1.4: contact forces with the bed and walls (the vehicle rests on the bottom), camera tilt, the camera lens and auto-exposure from the DiCam 300 manual, the lab pool rebuilt from a photo (lid, porthole, tether), a loading screen; the stylized view was removed. Since 1.3: a side-scan-sonar main menu, vehicle and scene selection, sound, a photo mode, and a portable build (all data next to the .exe). Since 1.2: thruster-induced sediment plumes (jet → bed shear → erosion → drifting, settling cloud with visible flocs matched to a real turbid frame), a lumped-mass tether with drag, friction and snagging that pulls on the vehicle, a seabed current, and the vehicle camera modelled from its datasheet (140° lens behind a flat port). Every parameter is tagged *verified*, *fitted* or *estimate*, and failed checks are reported. Windows build: see Releases. Interface is in Russian.

@@ -4,9 +4,13 @@
 Пишет godot/assets/lab/lab_pool.glb.
 
 По словам автора (2026-11-02): стены — бетон с налётом и илом, дно — чёрная резина, тоже в иле.
-Ил: смесь второго набора текстур по альфе цвета вершин (MAT_<основа>__brown_mud_03), на стенах гуще у дна
-и подтёками, на дне пятнами (оценка). Планшет мишени (10 секторов, альбедо по эталону Холопова из
-light_params.json, белая рамка, чёрный фон) лежит на дне, как в опытах, и второй висит на северной стене.
+Ил: смесь второго набора текстур по альфе цвета вершин (MAT_<основа>__brown_mud_03): на дне пятнами, на стенах —
+только узкой полосой у дна (по фото автора 2026-11-04 стены — гладкий светлый бетон с потёками и вертикальными
+швами, не грязь). Иллюминатор: круглое отверстие в западной стене с толстым откосом в грязи и ржавчине и тёмным
+стеклом (по фото; диаметр 0,45 м, центр на глубине 1,2 м посередине стены — оценка). Планшет мишени (10 секторов, альбедо по эталону Холопова из
+light_params.json, белая рамка, чёрный фон) висит на северной стене. Лестницы нет (по данным автора).
+Сверху бассейн закрыт крышкой из 6 секций, открыта одна — через неё опускали аппарат (по данным автора);
+раскладка 3 × 2 секции по 1,0 × 1,5 м и открытая — средняя южная (над стартом аппарата) — оценка.
 Оси: X восток, Y север, Z вверх; вода Z = 0, дно Z = −3; центр бассейна в начале координат.
 """
 import json
@@ -71,7 +75,6 @@ def plain(name, col, rough=0.9, metal=0.0):
 
 M_WALL = mix_mat("MAT_concrete_wall_006__brown_mud_03", "concrete_wall_006", "brown_mud_03")
 M_FLOOR = mix_mat("MAT_rubber_tiles__brown_mud_03", "rubber_tiles", "brown_mud_03")
-M_STEEL = plain("PLAIN_stainless_dull", (0.40, 0.40, 0.40), 0.5, 1.0)
 
 
 def noise2(x, y, seed):
@@ -124,28 +127,111 @@ grid("Floor", Vector((-h, -h, -S)), Vector((S, 0, 0)), Vector((0, S, 0)), 24, 24
 def wall_silt_f(seed):
     def f(u, v):
         z = v                                         # высота от дна
-        band = math.exp(-z / 0.35)
-        streak = max(noise2(u * 3.0, 0.0, seed), 0.0) ** 2 * math.exp(-z / 1.2)
-        a = min(max(0.15 + 0.85 * band + 0.6 * streak + 0.1 * noise2(u, z, seed + 1), 0.0), 1.0)
-        return a, 0.85 + 0.15 * noise2(u, z * 2, seed + 2)
+        band = math.exp(-z / 0.12)                    # ил только у самого дна
+        a = min(max(0.9 * band + 0.05 * noise2(u, z, seed + 1), 0.0), 1.0)
+        return a, 1.0 + 0.08 * noise2(u, z * 2, seed + 2)     # светлый бетон с лёгкими пятнами
     return f
 
 
 for k, (o, eu) in enumerate([(Vector((h, -h, -S)), Vector((-S, 0, 0))), (Vector((-h, h, -S)), Vector((S, 0, 0))),
                              (Vector((-h, -h, -S)), Vector((0, S, 0))), (Vector((h, h, -S)), Vector((0, -S, 0)))]):
-    grid(f"Wall_{k}", o, eu, Vector((0, 0, S + 0.15)), 12, 12, M_WALL, wall_silt_f(20 + k))
-# лестница
-for dx in (-0.25, 0.25):
-    bpy.ops.mesh.primitive_cylinder_add(radius=0.02, depth=3.2, location=(h - 0.12, dx, -1.45), vertices=12)
-    r = bpy.context.active_object
-    r.name = f"LadderRail_{dx}"
-    r.data.materials.append(M_STEEL)
-for s_ in range(6):
-    bpy.ops.mesh.primitive_cube_add(size=1, location=(h - 0.12, 0, -0.4 - s_ * 0.45))
-    st = bpy.context.active_object
-    st.scale = (0.06, 0.5, 0.025)
-    st.name = f"LadderStep_{s_}"
-    st.data.materials.append(M_STEEL)
+    grid(f"Wall_{k}", o, eu, Vector((0, 0, S + 0.15)), 24, 24, M_WALL, wall_silt_f(20 + k), 1.0)
+# швы опалубки: тонкие тёмные вертикальные полосы (по фото), по две на стену (места — оценка)
+M_SEAM = plain("PLAIN_wall_seam", (0.05, 0.045, 0.04), 0.9)
+for k, (c, n, t) in enumerate([((0, -h, 0), (0, 1, 0), (1, 0, 0)), ((0, h, 0), (0, -1, 0), (1, 0, 0)),
+                               ((-h, 0, 0), (1, 0, 0), (0, 1, 0)), ((h, 0, 0), (-1, 0, 0), (0, 1, 0))]):
+    for off in (-0.62, 0.81):
+        bpy.ops.mesh.primitive_cube_add(size=1)
+        sm = bpy.context.active_object
+        sm.name = f"Seam_{k}_{off}"
+        sm.location = (c[0] + t[0] * off + n[0] * 0.001, c[1] + t[1] * off + n[1] * 0.001, -S / 2 + 0.07)
+        sm.scale = (max(abs(t[0]) * 0.006, abs(n[0]) * 0.001), max(abs(t[1]) * 0.006, abs(n[1]) * 0.001), S + 0.14)
+        sm.data.materials.append(M_SEAM)
+
+# иллюминатор в западной стене (Wall_2): отверстие, откос глубиной 0,15 м, стекло в глубине
+PORT_R, PORT_DEPTH, PORT_Z = 0.225, 0.15, -1.2
+wall2 = bpy.data.objects["Wall_2"]
+cut = bpy.data.objects.new("PortCut", bpy.data.meshes.new("PortCut"))
+coll.objects.link(cut)
+bm = bmesh.new()
+bmesh.ops.create_cone(bm, cap_ends=True, segments=48, radius1=PORT_R, radius2=PORT_R, depth=0.4)
+bm.to_mesh(cut.data)
+bm.free()
+cut.location = (-h, 0, PORT_Z)
+cut.rotation_euler = (0, math.radians(90), 0)
+mod = wall2.modifiers.new("port", "BOOLEAN")
+mod.operation = "DIFFERENCE"
+mod.object = cut
+bpy.context.view_layer.objects.active = wall2
+bpy.ops.object.modifier_apply(modifier="port")
+bpy.data.objects.remove(cut)
+M_REVEAL = bpy.data.materials.new("MAT_concrete_wall_006")   # откос — тот же бетон (по фото светлый)
+M_SEDIM = bpy.data.materials.new("MAT_brown_mud_03")         # осадок и ржавые потёки на нижней части откоса
+
+
+def tube(name, r, a0, a1, mat, inset=0.0):
+    """Часть цилиндра откоса (ось — запад, от стены вглубь на PORT_DEPTH), нормали к оси отверстия."""
+    bm = bmesh.new()
+    uvl = bm.loops.layers.uv.new("UVMap")
+    n = max(4, int(48 * (a1 - a0) / (2 * math.pi)))
+    ring = []
+    for i in range(n + 1):
+        a = a0 + (a1 - a0) * i / n
+        y, z = r * math.cos(a), PORT_Z + r * math.sin(a)
+        ring.append((bm.verts.new((-h - inset, y, z)), bm.verts.new((-h - PORT_DEPTH + 0.01, y, z)), a))
+    for i in range(n):
+        v0, v1, aa = ring[i]
+        w0, w1, ab = ring[i + 1]
+        f = bm.faces.new([v0, v1, w1, w0])
+        for lp, (a, d) in zip(f.loops, [(aa, 0), (aa, 1), (ab, 1), (ab, 0)]):
+            lp[uvl].uv = (a * r / 0.5, d * PORT_DEPTH / 0.5)
+    bm.normal_update()
+    for f in bm.faces:                                # нормаль — к оси отверстия (внутрь трубы)
+        c = f.calc_center_median()
+        if f.normal.dot(Vector((c.x, 0, PORT_Z)) - c) < 0:
+            f.normal_flip()
+    me = bpy.data.meshes.new(name)
+    bm.to_mesh(me)
+    bm.free()
+    o = bpy.data.objects.new(name, me)
+    coll.objects.link(o)
+    o.data.materials.append(mat)
+    return o
+
+
+tube("PortReveal", PORT_R, 0.0, 2 * math.pi, M_REVEAL)
+tube("PortSediment", PORT_R - 0.004, math.radians(205), math.radians(330), M_SEDIM, 0.004)
+bpy.ops.mesh.primitive_circle_add(vertices=48, radius=PORT_R, fill_type="NGON", location=(-h - PORT_DEPTH + 0.02, 0, PORT_Z),
+                                  rotation=(0, math.radians(90), 0))
+gl = bpy.context.active_object
+gl.name = "PortGlass"
+gl.data.materials.append(plain("PLAIN_port_glass", (0.015, 0.016, 0.014), 0.15))
+# крышка: 6 секций 1,0 × 1,5 м (3 по востоку × 2 по северу) на борту бассейна, открыта средняя южная — она
+# поднята на петлях у южного борта и стоит вертикально (раскладка и материал — оценка)
+M_LID = plain("PLAIN_lid_plywood", (0.16, 0.14, 0.12), 0.85)
+M_FRAME = plain("PLAIN_lid_frame", (0.10, 0.10, 0.10), 0.6, 1.0)
+LID_Z = 0.15 + 0.01
+for i in range(3):
+    for j in range(2):
+        x0, y0 = -h + i * 1.0, -h + j * 1.5
+        bpy.ops.mesh.primitive_cube_add(size=1)
+        lp = bpy.context.active_object
+        lp.data.materials.append(M_LID)
+        if i == 1 and j == 0:
+            lp.name = "LidOpen"
+            lp.scale = (0.98, 0.02, 1.48)
+            lp.location = (x0 + 0.5, y0 - 0.02, LID_Z + 0.74)
+        else:
+            lp.name = f"Lid_{i}{j}"
+            lp.scale = (0.98, 1.48, 0.02)
+            lp.location = (x0 + 0.5, y0 + 0.75, LID_Z)
+for k, (loc, sc) in enumerate([((0, -0.0, LID_Z - 0.03), (S, 0.06, 0.04)), ((-0.5, 0, LID_Z - 0.03), (0.06, S, 0.04)),
+                               ((0.5, 0, LID_Z - 0.03), (0.06, S, 0.04))]):
+    bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
+    fr = bpy.context.active_object
+    fr.scale = sc
+    fr.name = f"LidBeam_{k}"
+    fr.data.materials.append(M_FRAME)
 
 
 # планшеты: 2 × 5 секторов 0,14 × 0,08 м, чёрный фон-подложка слева, белая рамка (как рис. 3 статьи)
@@ -168,7 +254,6 @@ def plate(name, loc, rot):
     return root
 
 
-plate("PlateFloor", (0, 0, -S + 0.003), (0, 0, 0))
 plate("PlateWall", (0, h - 0.003, -1.5), (math.radians(90), 0, 0))
 
 bpy.ops.wm.save_as_mainfile(filepath=ROOT + "/blender/lab_pool.blend")

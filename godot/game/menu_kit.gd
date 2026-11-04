@@ -190,23 +190,35 @@ static func note(parent: Node, text: String) -> Label:
 	return l
 
 
-## Настройки вида: сразу сохраняются; on_change вызывается после каждого изменения.
+## Настройки (главное меню и пауза): звук, режим управления, графика; сразу сохраняются, on_change — после
+## каждого изменения. Остальное (окошко, силы, график, ослабление света, камера) — клавишами в сцене (F1).
 static func settings_box(on_change: Callable) -> VBoxContainer:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)
-	heading(v, "ВИД И ЗВУК", 12)
-	for item in [["filters", "Стильный вид (Tab): крупные пиксели, дизеринг, зерно, виньетка"],
-			["pip", "Окошко «со стороны» (V)"], ["forces", "Силы в окошке (F3)"], ["graph", "График глубины (F2)"],
-			["light_curve", "Ослабление света (F4)"], ["vsync", "Вертикальная синхронизация"], ["show_fps", "Показывать кадры в секунду"]]:
-		var cb := CheckBox.new()
-		cb.text = item[1]
-		cb.button_pressed = bool(Settings.get_value(item[0]))
+	heading(v, "ЗВУК", 12)
+	for item in [["volume", "Общая"], ["volume_music", "Музыка"], ["volume_sfx", "Звуки"]]:
+		var row := HBoxContainer.new()
+		var l := Label.new()
+		l.text = item[1]
+		l.custom_minimum_size = Vector2(170, 0)
+		row.add_child(l)
+		var sl := HSlider.new()
+		sl.min_value = 0.0
+		sl.max_value = 1.0
+		sl.step = 0.05
+		sl.value = float(Settings.get_value(item[0]))
+		sl.custom_minimum_size = Vector2(300, 24)
+		sl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		var key: String = item[0]
-		cb.toggled.connect(func(on): Settings.set_value(key, on); Settings.apply_global(); on_change.call())
-		v.add_child(cb)
+		sl.value_changed.connect(func(val): Settings.set_value(key, val); Settings.apply_global())
+		row.add_child(sl)
+		v.add_child(row)
+	_gap(v)
+	heading(v, "УПРАВЛЕНИЕ", 12)
 	var rowm := HBoxContainer.new()
 	var lm := Label.new()
-	lm.text = "Режим управления  "
+	lm.text = "Режим"
+	lm.custom_minimum_size = Vector2(170, 0)
 	rowm.add_child(lm)
 	var om := OptionButton.new()
 	var keys := Settings.MODES.keys()
@@ -216,34 +228,43 @@ static func settings_box(on_change: Callable) -> VBoxContainer:
 	om.item_selected.connect(func(i): Settings.set_value("control", keys[i]); on_change.call())
 	rowm.add_child(om)
 	v.add_child(rowm)
-	note(v, "Научный — как настоящий пульт. Автопилот — та же физика, пульт помогает: плавный ход, поворот с постоянной скоростью, держит курс и\n" +
-			"дифферент, глубина клавишами E / Q через удержание. Автопилот + ускорение — ещё насос цистерн ×3 и тяга ×1,5.\n" +
-			"Режим применяется со следующего запуска уровня; результаты в таблицах — отдельно по режимам.")
-	var row := HBoxContainer.new()
-	var l := Label.new()
-	l.text = "Разрешение 3D в стильном виде  "
-	row.add_child(l)
-	var ob := OptionButton.new()
-	ob.add_item("1/2 (чётче)", 2)
-	ob.add_item("1/3 (быстрее)", 3)
-	ob.select(0 if int(Settings.get_value("style_scale")) == 2 else 1)
-	ob.item_selected.connect(func(i): Settings.set_value("style_scale", ob.get_item_id(i)); on_change.call())
-	row.add_child(ob)
-	v.add_child(row)
-	var row2 := HBoxContainer.new()
-	var l2 := Label.new()
-	l2.text = "Громкость  "
-	row2.add_child(l2)
-	var sl := HSlider.new()
-	sl.min_value = 0.0
-	sl.max_value = 1.0
-	sl.step = 0.05
-	sl.value = float(Settings.get_value("volume"))
-	sl.custom_minimum_size = Vector2(260, 24)
-	sl.value_changed.connect(func(val): Settings.set_value("volume", val); Settings.apply_global())
-	row2.add_child(sl)
-	v.add_child(row2)
+	note(v, "Научный — как настоящий пульт. Автопилот — та же физика, пульт помогает: плавный ход, держит курс, " +
+			"дифферент и глубину (E / Q). Автопилот + ускорение — ещё насос цистерн ×3 и тяга ×1,5. " +
+			"Режим действует со следующего запуска сцены; результаты в таблицах — по режимам.")
+	_gap(v)
+	heading(v, "ГРАФИКА", 12)
+	var rowr := HBoxContainer.new()
+	var lr := Label.new()
+	lr.text = "Разрешение 3D"
+	lr.custom_minimum_size = Vector2(170, 0)
+	rowr.add_child(lr)
+	var orr := OptionButton.new()
+	var scales := [1.0, 0.75, 0.5]
+	for i in scales.size():
+		orr.add_item(["100 % (чётче)", "75 %", "50 % (быстрее)"][i], i)
+	var cur := float(Settings.get_value("render_scale"))
+	var best := 0
+	for i in scales.size():
+		if absf(scales[i] - cur) < absf(scales[best] - cur):
+			best = i
+	orr.select(best)
+	orr.item_selected.connect(func(i): Settings.set_value("render_scale", scales[i]); on_change.call())
+	rowr.add_child(orr)
+	v.add_child(rowr)
+	for item in [["vsync", "Вертикальная синхронизация"], ["show_fps", "Показывать кадры в секунду"]]:
+		var cb := CheckBox.new()
+		cb.text = item[1]
+		cb.button_pressed = bool(Settings.get_value(item[0]))
+		var key: String = item[0]
+		cb.toggled.connect(func(on): Settings.set_value(key, on); Settings.apply_global(); on_change.call())
+		v.add_child(cb)
 	return v
+
+
+static func _gap(v: Node, h := 10.0) -> void:
+	var g := Control.new()
+	g.custom_minimum_size = Vector2(0, h)
+	v.add_child(g)
 
 
 ## Панель ПИД, как на пульте: Kp, Kd, Ki числами 0,0-9,9 с шагом 0,1, кнопка «Задать» шлёт команду n.

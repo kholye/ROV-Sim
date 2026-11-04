@@ -25,6 +25,7 @@ var rov: Rov
 var origin := Vector3.ZERO
 var center := Vector3.ZERO
 var cable: TetherCable
+var edge_turbid := true        # мутность у края места (только у судна; лаб. бассейн — нет)
 var snag := false              # кабель лежит на судне (не на дне) и держит аппарат
 var at_limit := false          # стравлен весь и натянут
 var _k := 1.0
@@ -145,6 +146,8 @@ func _physics_process(dt: float) -> void:
 
 ## Мутность у края места (оформление границы, разд. 28).
 func _edge_turbidity() -> void:
+	if not edge_turbid:
+		return
 	var cam := rov.camera().global_position
 	var h := Vector2(cam.x - center.x, cam.z - center.z).length()
 	var k := 1.0 + (TURBID_MAX - 1.0) * smoothstep(TURBID_FROM, TURBID_TO, h)

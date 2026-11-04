@@ -6,13 +6,10 @@ extends AudioStreamPlayer
 ## сообщении (как писк пульта). Частоты и громкости — художественная оценка, не замер: у настоящего аппарата
 ## гидрофона нет, это звук «как если бы он был» (docs/ui.md, «Звук»).
 ## Место (setup, place): бассейн — гул насосов фильтрации (100 Гц от сети 50 Гц и гармоники) и эхо плиточного зала;
-## лаб. бассейн — то же тише; судно — далёкий гул судна обеспечения над местом (низкие тона с биением лопастей, громче
-## у поверхности), шорох кабеля о судно на ходу, звон металла при касании судна и изредка запись гидрофона NOAA
-## (горбатый кит и судно, общественное достояние). Эхо — на шине World (UiSound.set_room).
+## лаб. бассейн — то же тише; судно — шорох кабеля о судно на ходу, звон металла при касании судна (гул судна
+## обеспечения и запись гидрофона убраны в версии 1.4). Эхо — на шине World (UiSound.set_room).
 
 const RATE := 22050.0
-const NOAA := preload("res://assets/audio/noaa_humpback_ship.ogg")
-const NOAA_GAP := Vector2(70.0, 150.0)   # с между записями NOAA у судна (случайно)
 const ROOMS := {"pool": [0.85, 0.22], "lab": [0.45, 0.14], "wreck": [0.0, 0.0]}   # эхо: размер, доля
 
 var rov: Rov
@@ -33,8 +30,6 @@ var _amb := PackedFloat64Array([0, 0, 0, 0])   # фазы окружения: г
 var _scr := 0.0
 var _scr_lp := PackedFloat64Array([0, 0])
 var _clang := 0.0
-var _noaa: AudioStreamPlayer
-var _noaa_t := 0.0
 
 
 func setup(r: Rov, place_ := "") -> void:
@@ -43,14 +38,6 @@ func setup(r: Rov, place_ := "") -> void:
 	bus = "World"
 	var room: Array = ROOMS.get(place, [0.0, 0.0])
 	UiSound.room(room[0], room[1])
-	if place == "wreck":
-		_noaa = AudioStreamPlayer.new()
-		_noaa.stream = NOAA
-		_noaa.bus = "World"
-		_noaa.volume_db = -20.0
-		_noaa.process_mode = Node.PROCESS_MODE_PAUSABLE
-		add_child(_noaa)
-		_noaa_t = randf_range(20.0, 50.0)
 	_rng.seed = 3
 	var s := AudioStreamGenerator.new()
 	s.mix_rate = RATE
@@ -80,23 +67,15 @@ func _process(dt: float) -> void:
 	if rov.notice_t != _last_notice:
 		_last_notice = rov.notice_t
 		_beep = 1.0
-	if _noaa:
-		_noaa_t -= dt
-		if _noaa_t <= 0.0:
-			_noaa.play()
-			_noaa_t = randf_range(NOAA_GAP.x, NOAA_GAP.y)
 	var n := _gen.get_frames_available()
 	if n <= 0:
 		return
 	var depth := maxf(rov.x[2], 0.0)
 	var a_hum := 0.0                                 # гул насосов бассейна
-	var a_ves := 0.0                                 # судно обеспечения над местом: громче у поверхности
 	if place == "pool":
 		a_hum = 0.010
 	elif place == "lab":
 		a_hum = 0.005
-	elif place == "wreck":
-		a_ves = 0.03 * clampf(5.0 / (depth + 2.0), 0.3, 1.0)
 	var spd := sqrt(rov.x[6] * rov.x[6] + rov.x[7] * rov.x[7] + rov.x[8] * rov.x[8])
 	var scr_tgt := 0.0
 	if tether and tether.wreck_contacts() > 0:
@@ -137,10 +116,6 @@ func _process(dt: float) -> void:
 		if a_hum > 0.0:
 			_amb[0] = fmod(_amb[0] + 100.0 / RATE, 1.0)
 			out += a_hum * (sin(TAU * _amb[0]) + 0.5 * sin(TAU * 2.0 * _amb[0]) + 0.25 * sin(TAU * 3.0 * _amb[0]))
-		if a_ves > 0.0:
-			_amb[0] = fmod(_amb[0] + 41.0 / RATE, 1.0)
-			_amb[1] = fmod(_amb[1] + 6.5 / RATE, 1.0)
-			out += a_ves * (sin(TAU * _amb[0]) + 0.6 * sin(TAU * 2.0 * _amb[0])) * (0.7 + 0.3 * sin(TAU * _amb[1]))
 		_scr += (scr_tgt - _scr) * a
 		if _scr > 1e-4:
 			var wn2 := _rng.randf() * 2.0 - 1.0

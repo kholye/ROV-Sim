@@ -252,6 +252,8 @@ const TEX_SCALE := {"MAT_rust_coarse_01__fine": 3.0, "MAT_green_metal_rust__rust
 const TEX_GAIN := {"rock_boulder_dry": 0.5}
 ## Оттенок по полному имени материала (тот же набор текстур, другой цвет): тёмно-синяя плитка разметки.
 const TEX_TINT := {"MAT_pool_tiles__lane": Vector3(0.10, 0.17, 0.45)}
+## Сила рельефа (карты нормалей) по имени материала: стены лаб. бассейна по фото автора гладкие (оценка).
+const TEX_NORMAL := {"MAT_concrete_wall_006__brown_mud_03": 0.25, "MAT_concrete_wall_006__rust_coarse_01": 0.5}
 const TEXTURED_SHADER := preload("res://shaders/underwater_textured.gdshader")
 ## Водоросли и сидячая живность «BIO_<вид>» (blender/build_wreck_site.py): амплитуда колыхания на конце, м
 ## (оценка; ламинария гибкая и длинная, актинии лишь шевелят венцом, звёзды и створки неподвижны).
@@ -291,6 +293,8 @@ static func textured_from_name(mat_name: String) -> ShaderMaterial:
 	var m := textured(a[0], a[1], float(TEX_SCALE.get(mat_name, 1.0)), float(TEX_GAIN.get(parts[0], 1.0)))
 	if TEX_TINT.has(mat_name):
 		m.set_shader_parameter("albedo_gain", TEX_TINT[mat_name])
+	if TEX_NORMAL.has(mat_name):
+		m.set_shader_parameter("normal_strength", TEX_NORMAL[mat_name])
 	if parts.size() > 1:
 		var b := tex_set(parts[1])
 		if not b.is_empty():

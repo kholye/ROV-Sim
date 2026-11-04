@@ -47,7 +47,7 @@ global uniform vec3 uw_silt_a;     // поглощение на массу ил�
 global uniform vec3 uw_silt_b;     // рассеяние на массу ила, м²/кг
 global uniform vec3 uw_silt_k;     // a* + B·b*: ослабление в квазиоднократном приближении, м²/кг
 
-const int UW_STEPS = 10;           // шагов интеграла обратного рассеяния (сгущены к камере; сходится уже с 8, v5_godot)
+const int UW_STEPS = 10;           // шагов интеграла обратного рассеяния (равномерно по углу из лампы, uw_backscatter)
 const int UW_MAX_LIGHTS = 16;
 
 float uw_phase(float cos_psi) {
@@ -68,21 +68,30 @@ vec3 uw_lamp_intensity(vec3 l) {
 	return uw_lamp_i * max(dot(l, uw_lamp_dir), 0.0);
 }
 
+// Обратное рассеяние света лампы вдоль луча камеры. Точки — равномерно по углу, под которым из лампы виден
+// отрезок луча (equiangular sampling: Kulla C., Fajardo M. Importance sampling techniques for path tracing in
+// participating media // Comput. Graph. Forum. 2012. Vol. 31, no. 4): t = Δ + h·tg θ, dt / r² = dθ / h — пик 1/r² у
+// лампы сокращается точно, поэтому 10 точек хватает и камере аппарата (лампа в 10 см), и окошку «со стороны»
+// (лампа в 1,7 м сбоку; до версии 1.4 точки сгущались к камере, и пик у лампы распадался на отдельные «языки»).
 vec3 uw_backscatter(vec3 cam, vec3 dir, float D) {
 	vec3 acc = vec3(0.0);
 	if (dot(uw_lamp_i, vec3(1.0)) <= 0.0) {
 		return acc;
 	}
+	float delta = dot(uw_lamp_pos - cam, dir);                     // ближайшая к лампе точка луча
+	float h = max(length(cam + dir * delta - uw_lamp_pos), 0.02);  // и расстояние до лампы от неё
+	float th_a = atan(-delta / h);
+	float th_b = atan((D - delta) / h);
+	float dth = (th_b - th_a) / float(UW_STEPS);
 	for (int i = 0; i < UW_STEPS; i++) {
-		float s = (float(i) + 0.5) / float(UW_STEPS);
-		float t = D * s * s;
-		float dt = D * 2.0 * s / float(UW_STEPS);
+		float th = th_a + (float(i) + 0.5) * dth;
+		float t = delta + h * tan(th);
 		vec3 X = cam + dir * t;
 		vec3 v = X - uw_lamp_pos;
 		float r = max(length(v), 0.02);
 		vec3 l = v / r;
 		float cos_psi = -dot(l, dir);
-		acc += uw_b * uw_phase(cos_psi) * uw_lamp_intensity(l) / (r * r) * exp(-uw_c * (r + t)) * dt;
+		acc += uw_b * uw_phase(cos_psi) * uw_lamp_intensity(l) * exp(-uw_c * (r + t)) * dth / h;
 	}
 	return acc;
 }

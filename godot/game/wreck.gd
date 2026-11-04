@@ -30,7 +30,6 @@ var _auto_hold := 0.0
 func _ready() -> void:
 	place = "wreck"
 	setup_level("wreck", "wreck_e_surface")
-	Underwater.set_exposure(float(uw.p["camera_exposure_wreck"]))
 	wreck = WRECK_GLB.instantiate()
 	wreck.position = Vector3(0, -SEABED, 0)
 	add_child(wreck)
@@ -211,7 +210,7 @@ func _auto_step(delta: float) -> void:
 		p += (goal - p).normalized() * step
 	var d := (look - p).normalized()
 	var psi := atan2(d.x, -d.z)                 # курс NED: от севера (−Z) к востоку (+X)
-	var theta := asin(clampf(d.y, -1, 1))       # дифферент: нос вверх > 0
+	var theta := asin(clampf(d.y, -1, 1)) + deg_to_rad(rov.cam_tilt)   # дифферент: нос вверх > 0; камера наклонена вниз
 	rov.x[3] = 0.0
 	rov.x[4] = theta
 	rov.x[5] = psi

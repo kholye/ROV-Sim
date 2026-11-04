@@ -121,7 +121,6 @@ func apply_settings() -> void:
 	pip.visible = bool(Settings.get_value("pip"))
 	pip.cam_mode = int(Settings.get_value("pip_cam"))
 	pip.show_forces = bool(Settings.get_value("forces"))
-	pip.set_styled(bool(Settings.get_value("filters")))
 	graph.visible = bool(Settings.get_value("graph"))
 	curve.visible = bool(Settings.get_value("light_curve"))
 	fps.visible = bool(Settings.get_value("show_fps"))
@@ -253,7 +252,7 @@ func _make_help() -> Control:
 
 const HELP := "[color=#e8b04a]УПРАВЛЕНИЕ КАК НА ПУЛЬТЕ[/color]\n[table=3][cell][color=#f2f2ea90]клавиатура[/color][/cell][cell][color=#f2f2ea90]геймпад Xbox[/color][/cell][cell][color=#f2f2ea90]команда в аппарат[/color][/cell][cell]W S A D, ↑ ↓ ← →   [/cell][cell]правый стик   [/cell][cell]ход и поворот: левый = y + x, правый = y − x[/cell][cell]E / Q   [/cell][cell]крестовина ↑/↓ + LT и RT   [/cell][cell]обе цистерны набрать / вытеснить (u / d)[/cell][cell]R / F   [/cell][cell]крестовина ↑/↓ + LT   [/cell][cell]носовая цистерна (дифферент)[/cell][cell]T / G   [/cell][cell]крестовина ↑/↓ + RT   [/cell][cell]кормовая цистерна[/cell][cell]H   [/cell][cell]B   [/cell][cell]удержание глубины вкл/выкл (h, цель в мм)[/cell][cell]PgUp / PgDn   [/cell][cell]Y / A   [/cell][cell]при удержании (H): цель глубины на шаг мельче / глубже — ПИД сам гонит цистерны[/cell][cell][lb] / [rb]   [/cell][cell]крестовина ← / →   [/cell][cell]шаг цели 10 / 50 / 100 / 500 мм[/cell][cell]L   [/cell][cell]LB   [/cell][cell]лампа 0 / 50 / 100 % (L)[/cell][cell]X дважды   [/cell][cell]—   [/cell][cell]сброс груза 1 кг (x, G)[/cell][cell]пробел дважды   [/cell][cell]—   [/cell][cell]аварийное всплытие: цистерны осушаются (A); ещё раз — отмена[/cell][cell]Esc   [/cell][cell]Start   [/cell][cell]пауза: ПИД (n: Kp, Kd, Ki 0,0-9,9), настройки, выход[/cell][/table]\n\n" + \
 		"[color=#e8b04a]ЭКРАН[/color]\n" + \
-		"Tab · X геймпада — фильтры (стильный / научный вид)   V · Back — окошко со стороны   Shift+V — его камера\n" + \
+		"I / K · R3 геймпада — наклон камеры аппарата вверх / вниз (0-30°)   V · Back — окошко со стороны   Shift+V — его камера\n" + \
 		"F2 — график глубины   F3 — силы в окошке   F4 — ослабление света   C — камера аппарата / вид сзади\n" + \
 		"F9 — запись телеметрии в CSV   F12 — снимок с подписью (папка photos)   F1 — эта справка\n\n" + \
 		"Крен и боковое смещение у аппарата не управляются (как у настоящего): крен только показывается.\n" + \

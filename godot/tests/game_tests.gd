@@ -155,9 +155,9 @@ func _pult_tests() -> void:
 	# крена и бокового хода нет ни в одном действии
 	var names := ", ".join(PultInput.KEYS.keys())
 	check("нет команд крена и бокового смещения", not names.contains("roll") and not names.contains("sway") and not names.contains("heave"))
-	Settings.override_from_args({"filters": "0", "style_scale": "2", "pip": true})
-	check("настройки из командной строки: --filters 0 --style_scale 2 --pip",
-			Settings.get_value("filters") == false and Settings.get_value("style_scale") == 2 and Settings.get_value("pip") == true)
+	Settings.override_from_args({"graph": "0", "render_scale": "0.5", "pip": true})
+	check("настройки из командной строки: --graph 0 --render_scale 0.5 --pip",
+			Settings.get_value("graph") == false and Settings.get_value("render_scale") == 0.5 and Settings.get_value("pip") == true)
 
 
 ## Режимы управления (game/rov.gd): аппарат в дереве без окна, шаги физики вручную.

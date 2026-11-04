@@ -115,7 +115,7 @@ func _ready() -> void:
 		var pg := a.find("--page")
 		if pg >= 0 and pg + 1 < a.size():
 			{"dive": _open_dive, "results": _results.bind(true), "authors": _authors, "settings": _settings,
-					"controls": _controls, "about": _about}.get(a[pg + 1], func(): pass).call()
+					"about": _about}.get(a[pg + 1], func(): pass).call()
 		var hv := a.find("--hover")
 		if hv >= 0 and hv + 1 < a.size():
 			items[int(a[hv + 1])].grab_focus()
@@ -476,12 +476,20 @@ func _arrow(t: String, d: int) -> Button:
 func _scene_row(i: int) -> Button:
 	var b := Button.new()
 	b.custom_minimum_size = Vector2(0, 120)
-	var sb := StyleBoxFlat.new()
+	var sb := StyleBoxFlat.new()                   # выбранная сцена — янтарная рамка (_set_scene)
 	sb.set_corner_radius_all(8)
 	sb.set_border_width_all(1)
-	for st in ["normal", "hover", "focus", "pressed", "hover_pressed"]:
+	for st in ["normal", "focus", "pressed"]:
 		b.add_theme_stylebox_override(st, sb)
 	row_style.append(sb)
+	var hv := StyleBoxFlat.new()                   # под мышью — только светлая рамка, выбор не меняется
+	hv.set_corner_radius_all(8)
+	hv.set_border_width_all(1)
+	hv.bg_color = Color(TEXT, 0.03)
+	hv.border_color = Color(TEXT, 0.35)
+	b.add_theme_stylebox_override("hover", hv)
+	b.add_theme_stylebox_override("hover_pressed", hv)
+	b.set_meta("hover_box", hv)
 	var m := HBoxContainer.new()
 	m.set_anchors_preset(Control.PRESET_FULL_RECT)
 	m.offset_left = 12
@@ -513,18 +521,24 @@ func _scene_row(i: int) -> Button:
 	m.add_child(best)
 	for c in m.get_children() + tv.get_children():
 		(c as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
-	b.focus_entered.connect(_set_scene.bind(i))
-	b.mouse_entered.connect(b.grab_focus)
-	b.pressed.connect(func(): if not start_btn.disabled: _go(LEVELS[_scene]["id"]))
+	b.focus_entered.connect(_set_scene.bind(i))     # клавиатура: стрелки выбирают сцену
+	b.pressed.connect(func():                        # щелчок / Enter: выбрать и перейти к «Начать» (запуск — только им)
+		_set_scene(i)
+		start_btn.grab_focus())
 	rows.append(b)
 	return b
 
 
 func _set_scene(i: int) -> void:
+	if i != _scene and dive.visible:
+		UiSound.sfx("switch")
 	_scene = i
 	for k in rows.size():
 		row_style[k].border_color = AMBER if k == i else Color(0, 0, 0, 0)
 		row_style[k].bg_color = Color(AMBER, 0.07) if k == i else Color(0, 0, 0, 0)
+		var hv: StyleBoxFlat = rows[k].get_meta("hover_box")
+		hv.border_color = AMBER if k == i else Color(TEXT, 0.35)
+		hv.bg_color = Color(AMBER, 0.1) if k == i else Color(TEXT, 0.03)
 
 
 func _set_vehicle(d: int) -> void:
@@ -574,7 +588,11 @@ func _best(id: String) -> String:
 
 func _go(scene: String) -> void:
 	UiSound.menu_music(false)
-	get_tree().change_scene_to_file(MenuKit.SCENES[scene])
+	var lv: Dictionary = LEVELS[_scene]
+	for l in LEVELS:                                 # --level: сцена по имени, не по выбранной строке
+		if l["id"] == scene:
+			lv = l
+	Loading.go(get_tree(), scene, lv["title"], lv["img"])
 
 
 func _input(ev: InputEvent) -> void:
@@ -723,7 +741,7 @@ func _results(rings: bool) -> void:
 	(b1 if rings else b2).grab_focus.call_deferred()
 
 
-## Настройки: имя пилота, вид и звук (MenuKit), отсюда же «Управление» и «Как это работает».
+## Настройки: имя пилота, звук, режим управления, графика (MenuKit.settings_box). Справка по клавишам — F1 в сцене.
 func _settings() -> void:
 	var v := _page("НАСТРОЙКИ", 820)
 	MenuKit.heading(v, "ПИЛОТ", 12)
@@ -738,33 +756,16 @@ func _settings() -> void:
 	gap.custom_minimum_size = Vector2(0, 6)
 	v.add_child(gap)
 	v.add_child(MenuKit.settings_box(func(): pass))
-	MenuKit.heading(v, "СПРАВКА", 12)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 8)
-	MenuKit.button(row, "Управление", _controls)
-	MenuKit.button(row, "Как это работает", _about)
-	v.add_child(row)
 	_focus_first(v)
 
 
-func _controls() -> void:
-	var v := _page("УПРАВЛЕНИЕ", 1100, _settings)
-	var r := RichTextLabel.new()
-	r.bbcode_enabled = true
-	r.fit_content = true
-	r.add_theme_font_override("normal_font", _vf(F_SANS, 400))
-	r.add_theme_font_size_override("normal_font_size", 15)
-	r.text = Hud.HELP.replace("#e8b04a", "#f0c27a")
-	v.add_child(r)
-
-
 func _about() -> void:
-	var v := _page("КАК ЭТО РАБОТАЕТ", 820, _settings)
+	var v := _page("КАК ЭТО РАБОТАЕТ", 820, _authors)
 	for s in [
 		["АППАРАТ", "«Петрович» — макет кафедры МИСиТ СПбГМТУ: корпус Ø110/140 × 650 мм, 8,2 кг, два маршевых движителя и две поршневые цистерны по 70 мл. Глубину меняют цистерны, крен и боковое смещение не управляются."],
 		["ДВИЖЕНИЕ", "Уравнения Fossen с 6 степенями свободы: присоединённые массы, сопротивление по силуэтам модели, плавучесть, тяга. Тот же расчёт есть на Python, совпадение до 0,0002 мм."],
 		["СВЕТ", "Поглощение по R, G, B (Pope & Fry), отдельно обратное рассеяние от лампы. Проверено по кадрам мишени Холопова и статье Игнатьевой и Кузьменко."],
-		["ВИД", "Стильный вид (Tab) — только последний проход поверх готового кадра. Снимок бокового обзора в меню — рельеф места судна из Blender при низком боковом свете, не запись прибора."],
+		["КАМЕРА", "Объектив DiCam 300 (140° на воздухе) за плоским окном бокса: в воде ≈ 90°. Снимок бокового обзора в меню — рельеф места судна из Blender при низком боковом свете, не запись прибора."],
 		["ИСТОЧНИКИ", "У каждого числа есть источник и статус «проверено / подогнано / оценка»: docs/physics-sources.md и docs/verification-report.md."]]:
 		MenuKit.heading(v, s[0], 12)
 		MenuKit.note(v, s[1])
@@ -790,6 +791,7 @@ func _authors() -> void:
 " +
 			"Судно: «Malpas Metal Boat Wreck», artfletch, CC BY 4.0. Текстуры Poly Haven (CC0).
 " +
-			"Шрифты PT Mono, PT Sans, Unbounded, IBM Plex (OFL). Звуки Kenney и музыка «Aquaria» (CC0), запись NOAA PMEL.
+			"Шрифты PT Mono, PT Sans, Unbounded, IBM Plex (OFL). Звуки Kenney и музыка «Aquaria» (CC0).
 " +
 			"Движок Godot Engine (MIT). Полный список и лицензии: папка licenses рядом с ROV-Sim.exe.")
+	MenuKit.button(v, "Как это работает", _about)

@@ -1,6 +1,6 @@
 class_name LevelBase
 extends Node3D
-## Общее для уровней: подводный свет, аппарат, экран оператора (Hud), стиль (StylePass), пауза,
+## Общее для уровней: подводный свет, аппарат, экран оператора (Hud), объектив камеры (LensPass), пауза,
 ## звук, режимы запуска для проверок. Уровень сообщает экрану задание (hud_mission) и подсказку (hud_prompt).
 ## Аргументы после «--»:
 ##   --bench <с>     замер кадров/с: аппарат идёт по кругу с лампой, печатает BENCH {...} и выходит
@@ -9,13 +9,13 @@ extends Node3D
 ##   --auto          автопилот проверки (у уровня свой: кольца / осмотр судна), печатает итог и выходит
 ##   --chase         вид сзади вместо камеры аппарата
 ##   --no-hud        без интерфейса и окошка (снимки сцены);  --show help / pause: справка или пауза открыты
-##   --filters 0/1, --pip 0/1, --forces 0/1, --graph 0/1, --light_curve 0/1, --vsync 0/1, --style_scale 2/3:
+##   --pip 0/1, --forces 0/1, --graph 0/1, --light_curve 0/1, --vsync 0/1, --render_scale 0.5..1, --cam_tilt 0..30:
 ##                   настройки на один запуск (game/settings.gd), в файл не пишутся
 
 var uw: Underwater
 var rov: Rov
 var hud: Hud
-var style: StylePass
+var lens: LensPass
 var pause: PauseMenu
 var audio: RovAudio
 var place := ""                # звук места: pool / lab / wreck (RovAudio), по сцене
@@ -24,6 +24,7 @@ var _frames := 0
 var _shot_done := false
 var _lens_set := false
 var _photo_busy := false
+var _uw_t := 0.0
 const PHOTO_FONT := preload("res://assets/fonts/PTSans-Regular.ttf")
 var _bench_t := 0.0
 var _bench_fps: Array[float] = []
@@ -60,8 +61,8 @@ func setup_level(water: String, e_surface_key: String, surface_y := 0.0) -> void
 	env.environment.ambient_light_source = Environment.AMBIENT_SOURCE_DISABLED
 	env.environment.reflected_light_source = Environment.REFLECTION_SOURCE_DISABLED
 	add_child(env)
-	style = StylePass.new()
-	add_child(style)
+	lens = LensPass.new()
+	add_child(lens)
 
 
 func spawn_rov(depth: float, north: float, east: float, psi_deg: float) -> void:
@@ -81,6 +82,8 @@ func spawn_rov(depth: float, north: float, east: float, psi_deg: float) -> void:
 		rov.x[1] = v[1]
 		rov.reset_control()
 		rov._sync()
+	if args.has("fixed_exposure"):           # --fixed_exposure: постоянная экспозиция camera_exposure (сравнение)
+		rov.auto_exposure = false
 	if args.has("record"):                   # --record: запись телеметрии с первого кадра (как F9)
 		rov.telemetry.start(0.0)
 	if args.has("lamp"):
@@ -134,10 +137,9 @@ func hud_prompt() -> String:
 
 
 func apply_settings() -> void:
-	style.set_on(bool(Settings.get_value("filters")))
-	if args.has("scale3d"):                # доля разрешения 3D для замеров
-		get_viewport().scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
-		get_viewport().scaling_3d_scale = float(args["scale3d"])
+	var vp := get_viewport()                 # разрешение 3D (настройки «Графика»); --scale3d — для замеров
+	vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+	vp.scaling_3d_scale = float(args["scale3d"]) if args.has("scale3d") else float(Settings.get_value("render_scale"))
 	if hud:
 		hud.apply_settings()
 
@@ -145,11 +147,7 @@ func apply_settings() -> void:
 func _unhandled_input(ev: InputEvent) -> void:
 	if hud == null or not ev.is_pressed() or ev.is_echo():
 		return
-	if ev.is_action("filters"):
-		Settings.toggle("filters")
-		apply_settings()
-		get_viewport().set_input_as_handled()
-	elif ev.is_action("photo"):
+	if ev.is_action("photo"):
 		take_photo()
 		get_viewport().set_input_as_handled()
 	elif hud.handle(ev):
@@ -195,10 +193,11 @@ func take_photo() -> String:
 
 func _process(delta: float) -> void:
 	_frames += 1
-	if style and rov:                        # объектив DiCam 300 — только у камеры аппарата
-		style.set_lens(get_viewport().get_camera_3d() == rov.cam_front, null if _lens_set else rov.lens)
+	if lens and rov:                         # объектив DiCam 300 — только у камеры аппарата
+		lens.set_lens(get_viewport().get_camera_3d() == rov.cam_front, null if _lens_set else rov.lens)
 		_lens_set = true
-	RenderingServer.global_shader_parameter_set("uw_time", Time.get_ticks_msec() / 1000.0)
+	_uw_t += delta                            # время игры: на паузе стоит (рыбы, водоросли, взвесь, каустика)
+	RenderingServer.global_shader_parameter_set("uw_time", _uw_t)
 	if args.has("photo") and _frames == 30:   # --photo: снимок фото-режима (как F12) и выход — проверка
 		var p := await take_photo()
 		print("PHOTO ", Paths.shown(p))

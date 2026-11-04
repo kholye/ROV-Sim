@@ -171,6 +171,43 @@ func _init() -> void:
 	var lerr := absf(tc.total_length() - tc.length)
 	check("кабель: длина звеньев = стравленной (%.1f нм)" % (lerr * 1e9), lerr < 1e-9)
 
+	# касание (physics/rov_contact.gd, разд. 31): тяжёлый аппарат (цистерны полны) на ровном дне 3 м —
+	# ложится без отскоков, заглубление < 1 мм, нижняя точка оболочки на дне; толчок вбок гасит трение
+	var cdyn := RovDynamics.new(p)
+	var cx := RovDynamics.initial_state(2.7, 0.0, 70e-6, 70e-6)
+	var floor_c := PackedFloat64Array()
+	for r in p["contact_points"]:
+		floor_c.append_array(PackedFloat64Array(r))
+		floor_c.append_array(PackedFloat64Array([0, 0, 3.0]))
+		floor_c.append_array(PackedFloat64Array([0, 0, -1.0]))
+	var ch := 1.0 / 180.0                  # шаг игры: кадр 1/60 с на 3 шага RK4
+	var lifted := 0
+	var was_down := false
+	var pen_max := 0.0
+	for i in int(60.0 / ch):
+		cx = cdyn.rk4_step(cx, ch, PackedFloat64Array([0, 0]), PackedInt32Array([0, 0]), PackedFloat64Array([0, 0, 0]),
+				false, PackedFloat64Array(), floor_c)
+		var pen := RovContact.max_depth(cx, floor_c)
+		if was_down and pen <= 0.0 and i * ch > 25.0:
+			lifted += 1
+		was_down = pen > 0.0
+		if i * ch > 25.0:
+			pen_max = maxf(pen_max, pen)
+	var Rc := RovDynamics.rot_nb(cx[3], cx[4], cx[5])
+	var low := 0.0                         # нижняя точка оболочки при текущем положении (аппарат может лечь с дифферентом)
+	for r in p["contact_points"]:
+		low = maxf(low, RovContact.point_ned(cx, Rc, PackedFloat64Array(r))[2])
+	var rest_err := absf(low - 3.0)
+	check("касание: лежит на дне (заглубление ≤ %.2f мм, отрывов %d, низ оболочки на дне ±%.2f мм, дифферент %.1f°)" % [pen_max * 1e3,
+			lifted, rest_err * 1e3, rad_to_deg(cx[4])], pen_max < 1e-3 and lifted == 0 and rest_err < 1e-3)
+	cx[6] = 0.3                            # толчок вперёд 0,3 м/с по дну
+	var x0 := cx[0]
+	for i in int(10.0 / ch):
+		cx = cdyn.rk4_step(cx, ch, PackedFloat64Array([0, 0]), PackedInt32Array([0, 0]), PackedFloat64Array([0, 0, 0]),
+				false, PackedFloat64Array(), floor_c)
+	check("касание: толчок 0,3 м/с гасится (через 10 с %.4f м/с, проехал %.2f м)" % [cx[6], cx[0] - x0],
+			absf(cx[6]) < 0.005 and RovContact.max_depth(cx, floor_c) < 1e-3)
+
 	print("ИТОГ: ", "все проверки пройдены" if failures == 0 else "%d проверок не пройдено" % failures)
 	quit(1 if failures > 0 else 0)
 

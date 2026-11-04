@@ -77,15 +77,17 @@ func backscatter(cam: Vector3, dir: Vector3, D: float) -> Vector3:
 	var acc := Vector3.ZERO
 	if lamp_i == Vector3.ZERO:
 		return acc
+	var delta := (lamp_pos - cam).dot(dir)         # точки равномерно по углу из лампы, как uw_backscatter в шейдере
+	var h := maxf((cam + dir * delta - lamp_pos).length(), 0.02)
+	var th_a := atan(-delta / h)
+	var dth := (atan((D - delta) / h) - th_a) / STEPS
 	for i in STEPS:
-		var s := (i + 0.5) / STEPS
-		var t := D * s * s
-		var dt := D * 2.0 * s / STEPS
+		var t := delta + h * tan(th_a + (i + 0.5) * dth)
 		var X := cam + dir * t
 		var v := X - lamp_pos
 		var r := maxf(v.length(), 0.02)
 		var l := v / r
-		acc += b * phase(-l.dot(dir)) * lamp_intensity(l) / (r * r) * _exp3(-c * (r + t)) * dt
+		acc += b * phase(-l.dot(dir)) * lamp_intensity(l) * _exp3(-c * (r + t)) * dth / h
 	return acc
 
 

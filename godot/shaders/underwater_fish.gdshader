@@ -32,12 +32,12 @@ void vertex() {
 		vec3 slot = INSTANCE_CUSTOM.xyz;
 		float h = fract(sin(float(INSTANCE_ID) * 12.9898) * 43758.5453);
 		float R = 0.5 * (s_radii.x + s_radii.y);
-		float th = TIME * s_omega + (slot.x + 0.3 * sin(TIME * 0.3 + h * 20.0)) / R;
+		float th = uw_time * s_omega + (slot.x + 0.3 * sin(uw_time * 0.3 + h * 20.0)) / R;
 		vec3 nrm = normalize(s_a1 * cos(th) / s_radii.x + s_a2 * sin(th) / s_radii.y);
 		vec3 fw = normalize(s_a1 * (-sin(th) * s_radii.x) + s_a2 * (cos(th) * s_radii.y)) * sign(s_omega);
 		vec3 p = s_center + s_a1 * cos(th) * s_radii.x + s_a2 * sin(th) * s_radii.y
-				+ nrm * (slot.z + 0.25 * sin(TIME * 0.27 + h * 31.0));
-		p.y = s_h0 + slot.y + 0.15 * sin(TIME * 0.23 + h * 17.0);
+				+ nrm * (slot.z + 0.25 * sin(uw_time * 0.27 + h * 31.0));
+		p.y = s_h0 + slot.y + 0.15 * sin(uw_time * 0.23 + h * 17.0);
 		vec3 d = p - rov_pos;
 		float dl = max(length(d), 1e-3);
 		float push = max(s_flee - dl, 0.0);
@@ -49,7 +49,7 @@ void vertex() {
 		vec3 rt = normalize(cross(fw, vec3(0.0, 1.0, 0.0)));
 		vec3 up = cross(rt, fw);
 		float amp = 0.12 + 0.08 * min(push, 1.0);
-		vec3 v = VERTEX + wave_axis * (0.5 * amp * env * sin(TIME * 6.2832 * s_freq + h * 6.2832 - 6.2832 * s / 0.9));
+		vec3 v = VERTEX + wave_axis * (0.5 * amp * env * sin(uw_time * 6.2832 * s_freq + h * 6.2832 - 6.2832 * s / 0.9));
 		VERTEX = p + (rt * v.x + up * v.y - fw * v.z) * INSTANCE_CUSTOM.w;
 		NORMAL = rt * NORMAL.x + up * NORMAL.y - fw * NORMAL.z;
 	} else {

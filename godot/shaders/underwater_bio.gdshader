@@ -28,12 +28,12 @@ void vertex() {
 		// смещение считается в мировых осях (MODEL_MATRIX включает преобразование экземпляра) и переводится
 		// обратно в оси сетки: world_vertex_coords с пачками экземпляров в Compatibility не работает
 		vec3 wp = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
-		float ph = 6.2832 * (TIME / period - dot(wp.xz, sway_dir.xz) / wave_len);
+		float ph = 6.2832 * (uw_time / period - dot(wp.xz, sway_dir.xz) / wave_len);
 		vec3 across = vec3(-sway_dir.z, 0.0, sway_dir.x);
 		vec3 off = sway * w * (sway_dir * (0.25 + sin(ph)) + across * 0.35 * sin(1.7 * ph + wp.y * 3.0));
 		off.y -= 0.5 * dot(off, off) / max(sway, 0.01) * w;     // конец опускается при отклонении (длина почти та же)
 		// трепет: короткая волна бежит по листу к концу (период ≈ 1,3 с), заметна у длинных листьев
-		off += sway * 0.18 * w * w * vec3(0.0, 1.0, 0.0) * sin(6.2832 * (TIME / 1.3 - w * 2.0) + wp.x * 5.0);
+		off += sway * 0.18 * w * w * vec3(0.0, 1.0, 0.0) * sin(6.2832 * (uw_time / 1.3 - w * 2.0) + wp.x * 5.0);
 		VERTEX += (inverse(MODEL_MATRIX) * vec4(off, 0.0)).xyz;
 	}
 }

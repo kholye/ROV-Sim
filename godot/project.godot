@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="ROV-Sim"
-config/version="1.3.0"
+config/version="1.4.0"
 run/main_scene="res://scenes/menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 
@@ -34,8 +34,8 @@ window/stretch/aspect="expand"
 [rendering]
 
 renderer/rendering_method="gl_compatibility"
-shader_compiler/shader_cache/enabled=false
 renderer/rendering_method.mobile="gl_compatibility"
+shader_compiler/shader_cache/enabled=false
 
 [shader_globals]
 

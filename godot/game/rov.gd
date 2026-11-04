@@ -43,7 +43,9 @@ var time := 0.0
 var touches := 0
 var uw: Underwater
 var light: LightModel              # та же модель света на процессоре: замер экспозиции, яркость взвеси
-var auto_exposure := true          # автоэкспозиция камеры (оценка: средний уровень замера = AE_TARGET)
+## Автоэкспозиция камеры: у DiCam 300 она есть (руководство пользователя, с. 9: поправка «Экспозиция» −3…+3 —
+## поверх автоматики; процессор Allwinner V3 / HawkView). --fixed_exposure — постоянная camera_exposure (сравнение).
+var auto_exposure := true
 var exposure := 0.004
 const AE_TARGET := 0.10            # средняя линейная яркость замера (≈ sRGB 89): тёмный стиль, оценка
 const AE_TAU := 0.6                # постоянная подстройки, с
@@ -78,17 +80,25 @@ var _ctl_acc := 0.0
 var _touch_t := -10.0
 var _rng := RandomNumberGenerator.new()
 var _model: Node3D
-var _body: CharacterBody3D
+var _body: CharacterBody3D             # не сталкивается: только мишень лучей (слой 2)
 var cam_front: Camera3D
 var lens: DicamLens            # объектив DiCam 300 в аквабоксе (табл. 7 Холопова, render/dicam_lens.gd)
 var cam_chase: Camera3D
 var _lamp_pos_body := PackedFloat64Array([0.33, 0.0, 0.0955])   # светодиоды лампы, NED тела (модель этапа 3)
 var _cam_pos_body := PackedFloat64Array([0.40, 0.0, 0.0])       # перед объективом камеры
+## Наклон камеры вниз (версия 1.4): у Дунаева (ВКР, описание аппарата, п. 2) угол наклона камеры можно менять;
+## сам угол и пределы в данных не указаны — оценка: 0-30° шагом 5°, по умолчанию 20° (Settings «cam_tilt»).
+## В пульте команды наклона нет; в игре — I / K (R3 геймпада по кругу).
+const CAM_TILT_MAX := 30.0
+const CAM_TILT_STEP := 5.0
+var cam_tilt := 20.0
 
 
 func setup(water: Underwater, depth: float, north: float, east: float, psi_deg: float) -> void:
 	uw = water
 	light = LightModel.new(uw)
+	exposure = float(uw.p["camera_exposure"])
+	Underwater.set_exposure(exposure)
 	p = RovDynamics.load_params()
 	control_mode = String(Settings.get_value("control"))
 	if control_mode == "boost":
@@ -112,10 +122,11 @@ func setup(water: Underwater, depth: float, north: float, east: float, psi_deg: 
 	cam_front.position = NedGodot.vec(_cam_pos_body)
 	cam_front.keep_aspect = Camera3D.KEEP_WIDTH
 	lens = DicamLens.new(uw.p)
-	cam_front.fov = rad_to_deg(2.0 * lens.half_water())   # прямолинейный кадр; проекцию объектива даёт StylePass
+	cam_front.fov = rad_to_deg(2.0 * lens.half_water())   # прямолинейный кадр; проекцию объектива даёт LensPass
 	cam_front.near = 0.02
 	cam_front.far = 60.0
 	add_child(cam_front)
+	set_cam_tilt(float(Settings.get_value("cam_tilt")))
 	cam_chase = Camera3D.new()
 	cam_chase.position = Vector3(0, 0.35, 1.3)
 	cam_chase.rotation = Vector3(deg_to_rad(-12), 0, 0)
@@ -136,7 +147,10 @@ func setup(water: Underwater, depth: float, north: float, east: float, psi_deg: 
 	vol.top_level = true
 	vol.name = "WaterVolume"
 	add_child(vol)
-	# корпус для столкновений: габарит модели 765 × 282 × 240 мм (blender/rov_report.json)
+	for c in p["contact_points"]:
+		_contact_pts.append(PackedFloat64Array(c))
+	# корпус-коробка для лучей других систем (слой 2): габарит модели 765 × 282 × 240 мм, середина габарита
+	# (17,5; 0; 49) мм в осях тела (по точкам касания) — столкновения считает модель касания
 	_body = CharacterBody3D.new()
 	_body.top_level = true
 	_body.collision_layer = 2
@@ -145,6 +159,7 @@ func setup(water: Underwater, depth: float, north: float, east: float, psi_deg: 
 	var box := BoxShape3D.new()
 	box.size = Vector3(0.282, 0.24, 0.765)
 	cs.shape = box
+	cs.position = NedGodot.vec(PackedFloat64Array([0.0175, 0.0, 0.049]))
 	_body.add_child(cs)
 	add_child(_body)
 	_sync()
@@ -186,6 +201,12 @@ func camera() -> Camera3D:
 ## Команда n пульта: Kp, Kd, Ki в шкале 0,0-9,9 (RovControl квантует с шагом 0,1).
 func set_pid(kp: float, kd: float, ki: float) -> void:
 	ctl = RovControl.new(p, kp, ki, kd)
+
+
+## Наклон камеры аппарата вниз, ° (0..CAM_TILT_MAX): поворот камеры вокруг поперечной оси тела.
+func set_cam_tilt(deg: float) -> void:
+	cam_tilt = clampf(deg, 0.0, CAM_TILT_MAX)
+	cam_front.rotation = Vector3(-deg_to_rad(cam_tilt), 0.0, 0.0)
 
 
 func say(t: String) -> void:
@@ -233,6 +254,13 @@ func _unhandled_input(ev: InputEvent) -> void:
 			emergency = true
 			depth_hold = false
 			say("АВАРИЙНОЕ ВСПЛЫТИЕ: цистерны осушаются")
+	elif ev.is_action("cam_up") or ev.is_action("cam_down"):
+		var d := -CAM_TILT_STEP if ev.is_action("cam_up") else CAM_TILT_STEP
+		if ev is InputEventJoypadButton and cam_tilt >= CAM_TILT_MAX:   # R3 — по кругу 0..30°
+			d = -cam_tilt
+		set_cam_tilt(cam_tilt + d)
+		Settings.set_value("cam_tilt", cam_tilt)
+		say("наклон камеры %d° вниз" % roundi(cam_tilt))
 	elif ev.is_action("cam_swap"):
 		cam_chase.current = cam_front.current
 		cam_front.current = not cam_chase.current
@@ -298,7 +326,7 @@ func _physics_process(delta: float) -> void:
 	thr = PackedFloat64Array([m[0] / 100.0, m[1] / 100.0])
 	if battery.E <= 0.0:
 		thr = PackedFloat64Array([0.0, 0.0])
-	var old := x.duplicate()
+	_find_contacts()
 	var n := maxi(1, roundi(delta / DT))
 	var h := delta / n
 	for i in n:
@@ -309,14 +337,14 @@ func _physics_process(delta: float) -> void:
 			tank_cmd = _tank_command()
 		if current:
 			current.step(h)
-		x = dyn.rk4_step(x, h, thr, tank_cmd, water_velocity(x[2]), dropped, ext_force)
+		x = dyn.rk4_step(x, h, thr, tank_cmd, water_velocity(x[2]), dropped, ext_force, contacts)
 		power = battery.step(h, thr, tank_cmd, lamp_level / 0.5)   # 7,2 Вт при 50 % (Холопов 3.1.2), ∝ уровню
 	power_avg += (power - power_avg) * (1.0 - exp(-delta / 10.0)) if time > 0.0 else power - power_avg
 	time += delta
 	telemetry.step(delta, self)
 	if confirm != "" and time - _confirm_t > 3.0:
 		confirm = ""
-	_collide(old)
+	_touch_check()
 	_sync()
 	meter_exposure(delta if time > 0.1 else 10.0)
 
@@ -374,35 +402,58 @@ func _trim(c: int) -> PackedInt32Array:
 	return PackedInt32Array([clampi(c + d, -1, 1), clampi(c - d, -1, 1)])
 
 
-## Столкновение: корпус-коробка движется из старого положения в новое; при касании
-## останавливается у препятствия, нормальная к нему скорость гасится (неупругий удар, оценка).
-func _collide(old: PackedFloat64Array) -> void:
-	var from := NedGodot.position(old)
-	var to := NedGodot.position(x)
-	_body.global_transform = Transform3D(NedGodot.basis(x), from)
-	var col := _body.move_and_collide(to - from)
-	if col == null:
+## Касание (physics/rov_contact.gd, docs/physics-sources.md, разд. 31): раз в кадр от середины аппарата к каждой
+## точке корпуса (contact_points) идёт луч с запасом CONTACT_MARGIN за точку; попадание даёт местную плоскость
+## препятствия (точка, нормаль), её сила считается внутри шагов RK4. Луч из середины не проскакивает тонкую
+## стену или дно, даже если точка уже за ними.
+const CONTACT_MARGIN := 0.1        # м: за кадр (1/60 с) аппарат проходит меньше 3 см
+var contacts := PackedFloat64Array()   # плоскости касания этого кадра (RovContact, по 9 чисел на точку)
+var _contact_pts: Array = []
+var _contact_hit: Array = []        # препятствие у каждой плоскости (для touched)
+var _touching := {}                 # препятствия, которых корпус касался в прошлом кадре
+
+
+func _find_contacts() -> void:
+	contacts = PackedFloat64Array()
+	_contact_hit.clear()
+	if not is_inside_tree():
 		return
-	var pos := _body.global_position
-	var np := NedGodot.vec_to_ned(pos)
-	x[0] = np[0]
-	x[1] = np[1]
-	x[2] = np[2]
-	var nrm := NedGodot.vec_to_ned(col.get_normal())
+	var space := get_world_3d().direct_space_state
 	var R := RovDynamics.rot_nb(x[3], x[4], x[5])
-	var v := PackedFloat64Array([0, 0, 0])
-	for i in 3:
-		v[i] = R[i * 3] * x[6] + R[i * 3 + 1] * x[7] + R[i * 3 + 2] * x[8]
-	var vn := v[0] * nrm[0] + v[1] * nrm[1] + v[2] * nrm[2]
-	if vn < 0.0:
-		for i in 3:
-			v[i] -= vn * nrm[i]
-		for i in 3:
-			x[6 + i] = R[i] * v[0] + R[3 + i] * v[1] + R[6 + i] * v[2]   # Rᵀ v
-	if time - _touch_t > TOUCH_PAUSE:
-		_touch_t = time
-		touches += 1
-		touched.emit(col.get_collider())
+	var c := NedGodot.position(x)
+	for r: PackedFloat64Array in _contact_pts:
+		var pw := NedGodot.vec(RovContact.point_ned(x, R, r))
+		var d := pw - c
+		var q := PhysicsRayQueryParameters3D.create(c, pw + d.normalized() * CONTACT_MARGIN, 1)
+		q.hit_back_faces = false
+		var hit := space.intersect_ray(q)
+		if hit.is_empty():
+			continue
+		var S := NedGodot.vec_to_ned(hit["position"])
+		var n := NedGodot.vec_to_ned(hit["normal"])
+		contacts.append_array(r)
+		contacts.append_array(S)
+		contacts.append_array(n)
+		_contact_hit.append(hit["collider"])
+
+
+## После шага: какие препятствия корпус касается сейчас; новое касание — сигнал touched (как вход в
+## столкновение в первой версии симулятора) с паузой TOUCH_PAUSE.
+func _touch_check() -> void:
+	var now := {}
+	var R := RovDynamics.rot_nb(x[3], x[4], x[5])
+	for i in _contact_hit.size():
+		var b := i * 9
+		var P := RovContact.point_ned(x, R, contacts.slice(b, b + 3))
+		var d := (contacts[b + 3] - P[0]) * contacts[b + 6] + (contacts[b + 4] - P[1]) * contacts[b + 7] 				+ (contacts[b + 5] - P[2]) * contacts[b + 8]
+		if d > 0.0:
+			now[_contact_hit[i]] = true
+	for col in now:
+		if not _touching.has(col) and time - _touch_t > TOUCH_PAUSE:
+			_touch_t = time
+			touches += 1
+			touched.emit(col)
+	_touching = now
 
 
 func _sync() -> void:

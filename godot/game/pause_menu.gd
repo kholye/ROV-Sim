@@ -80,7 +80,9 @@ func _pid() -> void:
 
 func _settings() -> void:
 	var v := _page()
-	v.add_child(MenuKit.settings_box(func(): pass))
+	MenuKit.heading(v, "ПИЛОТ", 12)
+	MenuKit.note(v, "%s — имя меняется в главном меню, не во время заплыва" % String(Settings.get_value("player")))
+	v.add_child(MenuKit.settings_box(level.apply_settings))
 	MenuKit.button(v, "← Назад", _main).grab_focus.call_deferred()
 
 

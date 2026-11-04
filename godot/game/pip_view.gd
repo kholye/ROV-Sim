@@ -15,7 +15,6 @@ const SIZE := Vector2(440, 248)
 var rov: Rov
 var cam_mode := 0
 var show_forces := true
-var styled := true
 var vp: SubViewport
 var cam: Camera3D
 var tex: TextureRect
@@ -34,6 +33,7 @@ func setup(r: Rov) -> void:
 	vp = SubViewport.new()
 	vp.render_target_update_mode = SubViewport.UPDATE_WHEN_PARENT_VISIBLE
 	vp.msaa_3d = Viewport.MSAA_DISABLED
+	vp.size = Vector2i(SIZE)
 	add_child(vp)
 	cam = Camera3D.new()
 	cam.fov = 60.0
@@ -70,18 +70,7 @@ func setup(r: Rov) -> void:
 	overlay.draw.connect(_draw_overlay)
 	add_child(overlay)
 	_font = Hud.FONT
-	set_styled(styled)
-
-
-func set_styled(v: bool) -> void:
-	styled = v
-	if vp == null:
-		return
-	var n := 3 if v else 1
-	vp.size = Vector2i(int(SIZE.x / n), int(SIZE.y / n))
-	tex.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST if v else CanvasItem.TEXTURE_FILTER_LINEAR
-	_mat = StylePass.material_for(Vector2(vp.size))
-	_mat.set_shader_parameter("stylize", v)
+	_mat = LensPass.material_for(Vector2(vp.size))
 	tex.material = _mat
 
 

@@ -23,7 +23,7 @@ void vertex() {
 	vec3 seed = INSTANCE_CUSTOM.xyz;                  // 0..1
 	float r = INSTANCE_CUSTOM.w;                      // радиус, м
 	// броуновское блуждание: медленные синусы со случайной фазой
-	vec3 wob = 0.03 * vec3(sin(TIME * 0.31 + seed.x * 40.0), sin(TIME * 0.23 + seed.y * 40.0), sin(TIME * 0.27 + seed.z * 40.0));
+	vec3 wob = 0.03 * vec3(sin(uw_time * 0.31 + seed.x * 40.0), sin(uw_time * 0.23 + seed.y * 40.0), sin(uw_time * 0.27 + seed.z * 40.0));
 	vec3 p = seed * box + offset + wob;
 	vec3 cam = CAMERA_POSITION_WORLD;
 	p = cam + mod(p - cam, vec3(box)) - vec3(box * 0.5);

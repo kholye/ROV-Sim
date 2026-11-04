@@ -63,8 +63,7 @@
 - **Unbounded** — The Unbounded Project Authors, и **IBM Plex Sans / IBM Plex Mono** — IBM Corp., лицензия **SIL Open Font License 1.1** (`godot/assets/fonts/Unbounded-Variable.ttf`, `IBMPlexSans-Variable.ttf`, `IBMPlexMono-Regular.ttf`, тексты лицензий рядом: `Unbounded-OFL.txt`, `IBMPlexSans-OFL.txt`, `IBMPlexMono-OFL.txt`), взяты из https://github.com/google/fonts (`ofl/unbounded`, `ofl/ibmplexsans`, `ofl/ibmplexmono`). Главное меню, страницы меню и пауза.
 - **Kenney «Interface Sounds»** — Kenney (www.kenney.nl), лицензия **CC0** (https://creativecommons.org/publicdomain/zero/1.0/), взяты с https://opengameart.org/content/interface-sounds; `godot/assets/audio/ui_*.ogg` (select_002, confirmation_002, back_002, switch_002, toggle_002, question_001), лицензия рядом: `kenney_interface_sounds_license.txt`. Звуки меню.
 - **«Aquaria»** — cynicmusic, лицензия **CC0**, https://opengameart.org/content/aquaria; `godot/assets/audio/menu_aquaria.ogg` (переведено из WAV в OGG). Музыка главного меню.
-- **Запись гидрофона «Humpback whale vocalizations with ship in background, Stellwagen Bank National Marine Sanctuary»** — NOAA PMEL Acoustics Program, https://pmel.noaa.gov/acoustics/multimedia.html (материалы NOAA — общественная информация, источник указан по просьбе NOAA); `godot/assets/audio/noaa_humpback_ship.ogg` (переведено из WAV в OGG). Далёкий звук у судна.
-- Остальной звук (движители, цистерны, касания, гул насосов и судна обеспечения, шорох кабеля, звон металла) синтезируется в игре (`godot/game/rov_audio.gd`).
+- Остальной звук (движители, цистерны, касания, гул насосов, шорох кабеля, звон металла) синтезируется в игре (`godot/game/rov_audio.gd`).
 
 ## Программы и инструменты
 - **Godot Engine** 4.7.2 — лицензия MIT, © Juan Linietsky, Ariel Manzur и участники Godot Engine (https://godotengine.org/license). Движок входит в сборку `.exe`; тексты лицензий движка и его сторонних библиотек лежат в сборке, в папке `licenses/`.

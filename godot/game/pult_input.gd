@@ -23,14 +23,14 @@ const KEYS := {
 	"depth_hold": [KEY_H], "target_up": [KEY_PAGEUP], "target_down": [KEY_PAGEDOWN],
 	"step_prev": [KEY_BRACKETLEFT], "step_next": [KEY_BRACKETRIGHT],
 	"lamp": [KEY_L], "drop": [KEY_X], "emergency": [KEY_SPACE],
-	"cam_swap": [KEY_C], "pip": [KEY_V], "filters": [KEY_TAB],
+	"cam_swap": [KEY_C], "pip": [KEY_V], "cam_up": [KEY_I], "cam_down": [KEY_K],
 	"help": [KEY_F1], "graph": [KEY_F2], "forces": [KEY_F3], "light_curve": [KEY_F4], "record": [KEY_F9], "photo": [KEY_F12],
 	"pause": [KEY_ESCAPE], "start_run": [KEY_ENTER, KEY_KP_ENTER], "reset_run": [KEY_BACKSPACE],
 }
 const PADS := {
 	"depth_hold": JOY_BUTTON_B, "target_up": JOY_BUTTON_Y, "target_down": JOY_BUTTON_A,
 	"step_prev": JOY_BUTTON_DPAD_LEFT, "step_next": JOY_BUTTON_DPAD_RIGHT, "lamp": JOY_BUTTON_LEFT_SHOULDER,
-	"pip": JOY_BUTTON_BACK, "pause": JOY_BUTTON_START, "filters": JOY_BUTTON_X,
+	"pip": JOY_BUTTON_BACK, "pause": JOY_BUTTON_START, "cam_down": JOY_BUTTON_RIGHT_STICK,
 }
 
 
