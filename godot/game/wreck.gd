@@ -222,16 +222,25 @@ func _auto_step(delta: float) -> void:
 	rov.x[2] = ned[2]
 
 
-func hud_mission() -> String:
-	var t := "ОСМОТР %d / %d\n%s с" % [survey.count(), survey.points.size(), Hud.num(survey.elapsed(rov.time), 1)]
-	# ближайшая неосмотренная точка
+## Ближайшая неосмотренная точка (−1 — все осмотрены).
+func _nearest() -> int:
 	var best := -1
 	var cam := rov.cam_front.global_position
 	for i in survey.points.size():
 		if not survey.done[i] and (best < 0 or cam.distance_to(survey.points[i]) < cam.distance_to(survey.points[best])):
 			best = i
-	if best >= 0:
-		t += "\nближе всего: %s, %s м" % [survey.names[best], Hud.num(cam.distance_to(survey.points[best]), 1)]
+	return best
+
+
+## Метка на ленте курса — направление на ближайшую неосмотренную точку: оператор знает план места с судна
+## обеспечения (версия 1.4: в мутной воде судна со старта не видно, видимость ≈ 7 м).
+func hud_target() -> Array:
+	var best := _nearest()
+	return [] if best < 0 else [survey.points[best], survey.names[best]]
+
+
+func hud_mission() -> String:
+	var t := "ОСМОТР %d / %d\n%s с" % [survey.count(), survey.points.size(), Hud.num(survey.elapsed(rov.time), 1)]
 	if tether:
 		t += "\nкабель %s / %s м, %s Н" % [Hud.num(tether.length(), 1), Hud.num(float(rov.p["tether_length_max"]), 0),
 				Hud.num(tether.tension(), 1)]

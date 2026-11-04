@@ -265,6 +265,17 @@ class Compass:
 	extends Control
 	var hud: Hud
 
+	const TARGET_LEVEL := 0.3      # м: цель «на глубине аппарата» (ромб), выше — ▲, ниже — ▼
+
+	## Знак цели: ▲ выше аппарата, ▼ ниже, ◆ на той же глубине (±TARGET_LEVEL).
+	func _vmark(c: Vector2, vz: int, col: Color) -> void:
+		if vz > 0:
+			draw_colored_polygon(PackedVector2Array([Vector2(c.x, c.y - 8), Vector2(c.x + 8, c.y + 6), Vector2(c.x - 8, c.y + 6)]), col)
+		elif vz < 0:
+			draw_colored_polygon(PackedVector2Array([Vector2(c.x - 8, c.y - 6), Vector2(c.x + 8, c.y - 6), Vector2(c.x, c.y + 8)]), col)
+		else:
+			draw_colored_polygon(PackedVector2Array([Vector2(c.x, c.y - 7), Vector2(c.x + 7, c.y), Vector2(c.x, c.y + 7), Vector2(c.x - 7, c.y)]), col)
+
 	func _draw() -> void:
 		var h := hud.rov.heading_deg()
 		var w := size.x
@@ -279,6 +290,26 @@ class Compass:
 			if big:
 				Hud.text(self, Vector2(x, 11), names.get(dd, str(dd)), Hud.WHITE, 12, true)
 		draw_colored_polygon(PackedVector2Array([Vector2(w / 2 - 8, 42), Vector2(w / 2, 31), Vector2(w / 2 + 8, 42)]), Hud.AMBER)
+		var tg: Array = hud.level.hud_target()          # цель уровня: знак на её пеленге (за краем ленты — стрелка и знак)
+		if not tg.is_empty():
+			var cp := hud.rov.cam_front.global_position
+			var d: Vector3 = tg[0] - cp
+			var brg := rad_to_deg(atan2(d.x, -d.z))      # пеленг от севера (−Z) к востоку (+X)
+			var rel := wrapf(brg - h, -180.0, 180.0)
+			var x := w / 2.0 + clampf(rel, -58.0, 58.0) * w / 120.0
+			var col := Color(0.55, 0.9, 1.0)
+			var vz := 0 if absf(d.y) <= TARGET_LEVEL else (1 if d.y > 0.0 else -1)   # цель выше / на глубине / ниже
+			var xs := x
+			if absf(rel) > 58.0:                         # за краем ленты: стрелка в сторону поворота, знак рядом
+				var sg := signf(rel)
+				draw_colored_polygon(PackedVector2Array([Vector2(x + 9 * sg, 37), Vector2(x - 5 * sg, 30), Vector2(x - 5 * sg, 44)]), col)
+				xs = x - 18 * sg
+			_vmark(Vector2(xs, 37), vz, col)
+			var lab := "%s %s м" % [String(tg[1]), Hud.num(Vector2(d.x, d.z).length(), 0)]
+			if vz != 0:
+				lab += " · %s %s м" % ["выше" if vz > 0 else "ниже", Hud.num(absf(d.y), 1)]
+			var half := Hud.FONT.get_string_size(lab, HORIZONTAL_ALIGNMENT_LEFT, -1, 12).x / 2.0 + 4.0
+			Hud.text(self, Vector2(clampf(x, half, w - half), 60), lab, col, 12, true)
 		Hud.text(self, Vector2(w / 2 + 14, 44), "%03d°" % posmod(roundi(h), 360), Hud.AMBER, 13, false)
 
 
