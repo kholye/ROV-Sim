@@ -1,16 +1,16 @@
-"""Лабораторный бассейн кафедры 3 × 3 × 3 м (тестовая сцена): модель для Godot и «сухие» рендеры.
+"""Лабораторный бассейн кафедры 3,5 × 3,5 × 3 м (тестовая сцена): модель для Godot и «сухие» рендеры.
 
     blender -b --factory-startup --python blender/build_lab_pool.py -- [--render <папка>]
 Пишет godot/assets/lab/lab_pool.glb.
 
 По словам автора (2026-11-02): стены — бетон с налётом и илом, дно — чёрная резина, тоже в иле.
 Ил: смесь второго набора текстур по альфе цвета вершин (MAT_<основа>__brown_mud_03): на дне пятнами, на стенах —
-только узкой полосой у дна (по фото автора 2026-11-04 стены — гладкий светлый бетон с потёками и вертикальными
-швами, не грязь). Иллюминатор: круглое отверстие в западной стене с толстым откосом в грязи и ржавчине и тёмным
+лёгкими пятнами и потёками, гуще у дна (стены — тёмный гладкий бетон concrete_wall_008, швов опалубки нет —
+версия 1.5 по замечаниям автора; доли ила и тон — оценка). Иллюминатор: круглое отверстие в западной стене с толстым откосом в грязи и ржавчине и тёмным
 стеклом (по фото; диаметр 0,45 м, центр на глубине 1,2 м посередине стены — оценка). Планшет мишени (10 секторов, альбедо по эталону Холопова из
 light_params.json, белая рамка, чёрный фон) висит на северной стене. Лестницы нет (по данным автора).
-Сверху бассейн закрыт крышкой из 6 секций, открыта одна — через неё опускали аппарат (по данным автора);
-раскладка 3 × 2 секции по 1,0 × 1,5 м и открытая — средняя южная (над стартом аппарата) — оценка.
+Сверху бассейн закрыт полом зала из щитов на раме, открыт один щит — через него опускали аппарат (по данным
+автора; пол и зал по скану LIDAR — blender/build_lab_room.py). Сторона ≈3,5 м — по данным автора 2026-11-05.
 Оси: X восток, Y север, Z вверх; вода Z = 0, дно Z = −3; центр бассейна в начале координат.
 """
 import json
@@ -27,7 +27,9 @@ ROOT = "D:/Документы/ROV-Sim"
 GLB = ROOT + "/godot/assets/lab/lab_pool.glb"
 TEX = ROOT + "/godot/assets/textures"
 PARAMS = ROOT + "/godot/physics/light_params.json"
-S = 3.0
+S = 3.5                            # сторона, м: ≈3,5 (по данным автора 2026-11-05, было 3,0)
+D = 3.0                            # глубина, м
+WALL_TOP = 0.0                     # стены до воды; над водой борт — в зале (build_lab_room.py)
 argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
 render_dir = argv[argv.index("--render") + 1] if "--render" in argv else None
 
@@ -73,7 +75,7 @@ def plain(name, col, rough=0.9, metal=0.0):
     return m
 
 
-M_WALL = mix_mat("MAT_concrete_wall_006__brown_mud_03", "concrete_wall_006", "brown_mud_03")
+M_WALL = mix_mat("MAT_concrete_wall_008__brown_mud_03", "concrete_wall_008", "brown_mud_03")   # гладкий светлый бетон (версия 1.5)
 M_FLOOR = mix_mat("MAT_rubber_tiles__brown_mud_03", "rubber_tiles", "brown_mud_03")
 
 
@@ -117,37 +119,30 @@ def floor_silt(u, v):
     x, y = u - h, v - h
     edge = max(abs(x), abs(y)) / h
     a = min(max(0.05 + 0.75 * noise2(x, y, 3) + 0.5 * edge ** 3, 0.0), 1.0)
-    return a, 0.9 + 0.1 * noise2(x, y, 9)
+    # чёрная резина (по данным автора): тон резины 0,2, под илом светлее до ~0,6 (оценка); до версии 1.5 маска ила
+    # терялась при экспорте, и дно было целиком в иле
+    return a, (0.2 + 0.4 * a) * (1.0 + 0.1 * noise2(x, y, 9))
 
 
-grid("Floor", Vector((-h, -h, -S)), Vector((S, 0, 0)), Vector((0, S, 0)), 24, 24, M_FLOOR, floor_silt, 0.5)
+grid("Floor", Vector((-h, -h, -D)), Vector((S, 0, 0)), Vector((0, S, 0)), 24, 24, M_FLOOR, floor_silt, 0.5)
 
 
-# стены: ил полосой у дна (до ~0,4 м) и подтёки, налёт выше
+# стены: тёмный бетон (тон 0,55 — по замечанию автора 2026-11-05 «темнее, не больничный»), лёгкий налёт ила
+# пятнами и потёками по всей высоте (доля до ~0,6) и полоса у дна; величины — оценка
 def wall_silt_f(seed):
     def f(u, v):
         z = v                                         # высота от дна
-        band = math.exp(-z / 0.12)                    # ил только у самого дна
-        a = min(max(0.9 * band + 0.05 * noise2(u, z, seed + 1), 0.0), 1.0)
-        return a, 1.0 + 0.08 * noise2(u, z * 2, seed + 2)     # светлый бетон с лёгкими пятнами
+        band = math.exp(-z / 0.25)                    # у дна гуще
+        patch = max(noise2(u * 0.7, z * 0.7, seed + 1), 0.0)          # пятна налёта
+        drip = max(noise2(u * 4.0, z * 0.25, seed + 3), 0.0) ** 2     # вертикальные потёки
+        a = min(max(0.1 + 0.85 * band + 0.75 * patch + 0.5 * drip, 0.0), 1.0)   # шейдер мешает ил с доли 0,15
+        return a, (0.55 + 0.06 * noise2(u, z * 2, seed + 2)) * (1.0 - 0.4 * a)   # ил темнее бетона
     return f
 
 
-for k, (o, eu) in enumerate([(Vector((h, -h, -S)), Vector((-S, 0, 0))), (Vector((-h, h, -S)), Vector((S, 0, 0))),
-                             (Vector((-h, -h, -S)), Vector((0, S, 0))), (Vector((h, h, -S)), Vector((0, -S, 0)))]):
-    grid(f"Wall_{k}", o, eu, Vector((0, 0, S + 0.15)), 24, 24, M_WALL, wall_silt_f(20 + k), 1.0)
-# швы опалубки: тонкие тёмные вертикальные полосы (по фото), по две на стену (места — оценка)
-M_SEAM = plain("PLAIN_wall_seam", (0.05, 0.045, 0.04), 0.9)
-for k, (c, n, t) in enumerate([((0, -h, 0), (0, 1, 0), (1, 0, 0)), ((0, h, 0), (0, -1, 0), (1, 0, 0)),
-                               ((-h, 0, 0), (1, 0, 0), (0, 1, 0)), ((h, 0, 0), (-1, 0, 0), (0, 1, 0))]):
-    for off in (-0.62, 0.81):
-        bpy.ops.mesh.primitive_cube_add(size=1)
-        sm = bpy.context.active_object
-        sm.name = f"Seam_{k}_{off}"
-        sm.location = (c[0] + t[0] * off + n[0] * 0.001, c[1] + t[1] * off + n[1] * 0.001, -S / 2 + 0.07)
-        sm.scale = (max(abs(t[0]) * 0.006, abs(n[0]) * 0.001), max(abs(t[1]) * 0.006, abs(n[1]) * 0.001), S + 0.14)
-        sm.data.materials.append(M_SEAM)
-
+for k, (o, eu) in enumerate([(Vector((h, -h, -D)), Vector((-S, 0, 0))), (Vector((-h, h, -D)), Vector((S, 0, 0))),
+                             (Vector((-h, -h, -D)), Vector((0, S, 0))), (Vector((h, h, -D)), Vector((0, -S, 0)))]):
+    grid(f"Wall_{k}", o, eu, Vector((0, 0, D + WALL_TOP)), 24, 24, M_WALL, wall_silt_f(20 + k), 2.0)
 # иллюминатор в западной стене (Wall_2): отверстие, откос глубиной 0,15 м, стекло в глубине
 PORT_R, PORT_DEPTH, PORT_Z = 0.225, 0.15, -1.2
 wall2 = bpy.data.objects["Wall_2"]
@@ -165,7 +160,7 @@ mod.object = cut
 bpy.context.view_layer.objects.active = wall2
 bpy.ops.object.modifier_apply(modifier="port")
 bpy.data.objects.remove(cut)
-M_REVEAL = bpy.data.materials.new("MAT_concrete_wall_006")   # откос — тот же бетон (по фото светлый)
+M_REVEAL = bpy.data.materials.new("MAT_concrete_wall_008")   # откос — тот же бетон (по фото светлый)
 M_SEDIM = bpy.data.materials.new("MAT_brown_mud_03")         # осадок и ржавые потёки на нижней части откоса
 
 
@@ -206,32 +201,7 @@ bpy.ops.mesh.primitive_circle_add(vertices=48, radius=PORT_R, fill_type="NGON", 
 gl = bpy.context.active_object
 gl.name = "PortGlass"
 gl.data.materials.append(plain("PLAIN_port_glass", (0.015, 0.016, 0.014), 0.15))
-# крышка: 6 секций 1,0 × 1,5 м (3 по востоку × 2 по северу) на борту бассейна, открыта средняя южная — она
-# поднята на петлях у южного борта и стоит вертикально (раскладка и материал — оценка)
-M_LID = plain("PLAIN_lid_plywood", (0.16, 0.14, 0.12), 0.85)
-M_FRAME = plain("PLAIN_lid_frame", (0.10, 0.10, 0.10), 0.6, 1.0)
-LID_Z = 0.15 + 0.01
-for i in range(3):
-    for j in range(2):
-        x0, y0 = -h + i * 1.0, -h + j * 1.5
-        bpy.ops.mesh.primitive_cube_add(size=1)
-        lp = bpy.context.active_object
-        lp.data.materials.append(M_LID)
-        if i == 1 and j == 0:
-            lp.name = "LidOpen"
-            lp.scale = (0.98, 0.02, 1.48)
-            lp.location = (x0 + 0.5, y0 - 0.02, LID_Z + 0.74)
-        else:
-            lp.name = f"Lid_{i}{j}"
-            lp.scale = (0.98, 1.48, 0.02)
-            lp.location = (x0 + 0.5, y0 + 0.75, LID_Z)
-for k, (loc, sc) in enumerate([((0, -0.0, LID_Z - 0.03), (S, 0.06, 0.04)), ((-0.5, 0, LID_Z - 0.03), (0.06, S, 0.04)),
-                               ((0.5, 0, LID_Z - 0.03), (0.06, S, 0.04))]):
-    bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
-    fr = bpy.context.active_object
-    fr.scale = sc
-    fr.name = f"LidBeam_{k}"
-    fr.data.materials.append(M_FRAME)
+# сверху бассейн закрыт полом зала из щитов (blender/build_lab_room.py, по скану LIDAR); открыт один щит
 
 
 # планшеты: 2 × 5 секторов 0,14 × 0,08 м, чёрный фон-подложка слева, белая рамка (как рис. 3 статьи)
@@ -294,6 +264,10 @@ for m in bpy.data.materials:
         for n in [n for n in m.node_tree.nodes if n.type in ("TEX_IMAGE", "VERTEX_COLOR")]:   # с узлом цвета вершин экспортёр теряет альфу (маску ила)
             m.node_tree.nodes.remove(n)
 os.makedirs(os.path.dirname(GLB), exist_ok=True)
+for o in coll.objects:                                # без активного слоя цвета экспортёр пишет альфу 1 (ил везде)
+    if o.type == "MESH" and o.data.color_attributes:
+        o.data.color_attributes.active_color = o.data.color_attributes[0]
+        o.data.color_attributes.render_color_index = 0
 for o in bpy.context.view_layer.objects:
     o.select_set(o.type in ("MESH", "EMPTY") and o.name not in ("cam", "top"))
 bpy.ops.export_scene.gltf(filepath=GLB, export_format="GLB", export_copyright="ROV-Sim, Kholopov E. G. (Холопов Е. Г.), 2026, CC BY 4.0",  # то же пишет work/tools/stamp_glb.py

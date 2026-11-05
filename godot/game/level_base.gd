@@ -168,7 +168,7 @@ func take_photo() -> String:
 	var cap := CanvasLayer.new()
 	cap.layer = 30
 	var l := Label.new()
-	var names := {"pool": "бассейн с кольцами", "wreck": "затонувшее судно", "lab": "лаб. бассейн 3 × 3 × 3 м"}
+	var names := {"pool": "бассейн с кольцами", "wreck": "затонувшее судно", "lab": "лаб. бассейн 3,5 × 3,5 × 3 м"}
 	l.text = "ТНПА «Петрович» · %s · глубина %s м · курс %03d° · %s\n%s" % [names.get(place, place),
 			Hud.num(rov.depth_meas, 2), posmod(roundi(rad_to_deg(rov.x[5])), 360),
 			Time.get_datetime_string_from_system(false, true), Credits.SHORT]

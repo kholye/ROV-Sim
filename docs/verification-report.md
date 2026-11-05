@@ -502,7 +502,7 @@ ROV-Sim.exe -- --level pool --bench 30
 
 Сцены (Blender без окна, из корня проекта; скан судна должен лежать в data/models/malpas_metal_boat_wreck):
 ```
-python work/tools/get_polyhaven.py 1k brown_mud_02 brown_mud_03 brown_mud_rocks_01 dense_sand rock_boulder_dry rust_coarse_01 green_metal_rust concrete_wall_006 rubber_tiles anti_skid_tiles
+python work/tools/get_polyhaven.py 1k brown_mud_02 brown_mud_03 brown_mud_rocks_01 dense_sand rock_boulder_dry rust_coarse_01 green_metal_rust concrete_wall_006 concrete_wall_008 rubber_tiles anti_skid_tiles
 python work/tools/make_pool_tiles.py
 D:/Apps/Blender/blender.exe -b --factory-startup --python blender/build_pool.py -- --render <папка>
 D:/Apps/Blender/blender.exe -b --factory-startup --python blender/build_wreck_scan.py -- --render <папка>

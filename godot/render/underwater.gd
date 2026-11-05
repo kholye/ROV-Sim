@@ -253,7 +253,7 @@ const TEX_GAIN := {"rock_boulder_dry": 0.5}
 ## Оттенок по полному имени материала (тот же набор текстур, другой цвет): тёмно-синяя плитка разметки.
 const TEX_TINT := {"MAT_pool_tiles__lane": Vector3(0.10, 0.17, 0.45)}
 ## Сила рельефа (карты нормалей) по имени материала: стены лаб. бассейна по фото автора гладкие (оценка).
-const TEX_NORMAL := {"MAT_concrete_wall_006__brown_mud_03": 0.25, "MAT_concrete_wall_006__rust_coarse_01": 0.5}
+const TEX_NORMAL := {"MAT_concrete_wall_008__brown_mud_03": 0.5, "MAT_concrete_wall_006__rust_coarse_01": 0.5}
 const TEXTURED_SHADER := preload("res://shaders/underwater_textured.gdshader")
 ## Водоросли и сидячая живность «BIO_<вид>» (blender/build_wreck_site.py): амплитуда колыхания на конце, м
 ## (оценка; ламинария гибкая и длинная, актинии лишь шевелят венцом, звёзды и створки неподвижны).

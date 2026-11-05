@@ -16,7 +16,7 @@
 
 - **Бассейн с кольцами**, 12 × 25 × 5 м: шесть колец по порядку на время. Раскладка — из первой версии симулятора.
 - **Затонувшее судно** в мутной воде (видимость около 7 м): осмотреть шесть точек на корпусе вблизи, при свете лампы. Аппарат идёт на кабеле, который тонет, сносится течением и может зацепиться за обломки. Движители у дна поднимают ил. Направление на ближайшую точку показывает метка на ленте курса.
-- **Лабораторный бассейн** кафедры, 3 × 3 × 3 м: мишень для проверки света. Крышка из шести секций, открыта одна, поэтому внутри темно.
+- **Лабораторный бассейн** кафедры, 3,5 × 3,5 × 3 м: мишень для проверки света. Сверху пол лаборатории из щитов, открыт один, поэтому внутри темно; зал над бассейном построен по скану LIDAR помещения и из-под воды виден через окно Снелла.
 
 | | |
 |---|---|
@@ -100,4 +100,4 @@ Godot_v4.7.2-stable_win64_console.exe --headless --path godot --export-release "
 
 ---
 
-**In English.** ROV-Sim simulates «Petrovich», a small ROV test bed of the Department of Marine Information Systems and Technologies, SMTU (Saint Petersburg). The vehicle has two thrusters and two 70 ml piston ballast tanks and no vertical thrusters. Motion follows Fossen's 6-DOF equations with mass properties from the 3D model; underwater light is computed per RGB channel with absorption and backscatter. A Python reference reproduces the physics, and the results of the checks, including the failed ones, are listed above. Three scenes: a ring course in a pool, a wreck survey in turbid water on a tether, and the department's 3 × 3 × 3 m test tank. Windows build: see Releases. The interface is in Russian.
+**In English.** ROV-Sim simulates «Petrovich», a small ROV test bed of the Department of Marine Information Systems and Technologies, SMTU (Saint Petersburg). The vehicle has two thrusters and two 70 ml piston ballast tanks and no vertical thrusters. Motion follows Fossen's 6-DOF equations with mass properties from the 3D model; underwater light is computed per RGB channel with absorption and backscatter. A Python reference reproduces the physics, and the results of the checks, including the failed ones, are listed above. Three scenes: a ring course in a pool, a wreck survey in turbid water on a tether, and the department's 3.5 × 3.5 × 3 m test tank under the lab floor (the lab is modelled from a LIDAR scan and seen through Snell's window). Windows build: see Releases. The interface is in Russian.

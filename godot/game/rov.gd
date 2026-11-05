@@ -45,6 +45,7 @@ var time := 0.0
 var touches := 0
 var uw: Underwater
 var light: LightModel              # та же модель света на процессоре: замер экспозиции, яркость взвеси
+var above_water: Callable          # яркость того, что над водой (кд/м², точка выхода на поверхность) — для замера; пусто = нет
 ## Автоэкспозиция камеры: у DiCam 300 она есть (руководство пользователя, с. 9: поправка «Экспозиция» −3…+3 —
 ## поверх автоматики; процессор Allwinner V3 / HawkView). --fixed_exposure — постоянная camera_exposure (сравнение).
 var auto_exposure := true
@@ -513,7 +514,15 @@ func metered_luminance(cam: Camera3D, vp: Vector2, mask := 1) -> float:
 			var q := PhysicsRayQueryParameters3D.create(o, o + d * 30.0, mask)
 			var hit := space.intersect_ray(q)
 			var L: Vector3
-			if hit.is_empty():
+			var ts := (light.surface_y - o.y) / d.y if d.y > 1e-3 and o.y < light.surface_y else -1.0
+			if above_water.is_valid() and ts > 0.0 and (hit.is_empty() or o.distance_to(hit["position"]) > ts):
+				# луч выходит к поверхности: внутри окна Снелла — свет над водой (× n²·T ≈ 1,74), за ним — отражение толщи
+				var S := o + d * ts
+				var Lin := light.linf(S)
+				if d.y > 0.6615:
+					Lin = Vector3.ONE * float(above_water.call(S)) * 1.74
+				L = light.radiance(o, S, Vector3.DOWN, Vector3.ZERO) + Lin * LightModel._exp3(-light.c * ts)
+			elif hit.is_empty():
 				L = light.radiance(o, o + d * 30.0, Vector3.UP, Vector3.ZERO)
 			else:
 				L = light.radiance(o, hit["position"], hit["normal"], Vector3(0.15, 0.15, 0.15))

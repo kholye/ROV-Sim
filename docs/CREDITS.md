@@ -53,10 +53,12 @@
 ## 3D-модели
 - **«Malpas Metal Boat Wreck»** — artfletch, https://sketchfab.com/3d-models/malpas-metal-boat-wreck-7a2c49c1be2c48a3a4d80a3f27dae205, лицензия **CC BY 4.0** (http://creativecommons.org/licenses/by/4.0/). Изменено: срезана грунтовая подложка, упрощено с 664 до 80 тыс. треугольников, текстура уменьшена до 4096², судно поставлено на дно с креном и наносами ила (`blender/build_wreck_scan.py`, `build_wreck_site.py`). Используется в сцене «корабль» (`godot/assets/wreck/wreck_site.glb`).
 - Аппарат, бассейны, кольца, бочки, якорь, камни — свои, собраны скриптами Blender (`blender/*.py`).
+- Зал лаборатории над лабораторным бассейном — свой, по размерам скана LIDAR помещения кафедры (снят Холоповым Е. Г., 2026; скан в сборку не входит): `blender/scan_measure.py`, `build_lab_room.py`, `lab_devices.py`, `bake_lab_room.py`.
 
 ## Текстуры
-- **Poly Haven** (https://polyhaven.com), лицензия **CC0**: brown_mud_02, brown_mud_03, brown_mud_rocks_01, dense_sand, rock_boulder_dry, rust_coarse_01, green_metal_rust, concrete_wall_006, rubber_tiles, anti_skid_tiles (`godot/assets/textures/`, скачивает `work/tools/get_polyhaven.py`).
+- **Poly Haven** (https://polyhaven.com), лицензия **CC0**: brown_mud_02, brown_mud_03, brown_mud_rocks_01, dense_sand, rock_boulder_dry, rust_coarse_01, green_metal_rust, concrete_wall_006, concrete_wall_008, painted_plaster_wall, distressed_painted_planks, floor_tiles_08, herringbone_parquet, concrete_floor_worn_001, rubber_tiles, anti_skid_tiles (`godot/assets/textures/`, скачивает `work/tools/get_polyhaven.py`).
 - Плитка бассейна `pool_tiles` — своя (`work/tools/make_pool_tiles.py`).
+- Стенды, плакаты, доска, знак и картон в зале лаборатории — свои (`blender/make_room_textures.py`).
 
 ## Шрифты и звук
 - **PT Mono** и **PT Sans** — ParaType, лицензия **SIL Open Font License 1.1** (`godot/assets/fonts/PTMono-Regular.ttf`, `PTSans-Regular.ttf`, `PTSans-Bold.ttf`; тексты лицензии рядом: `PTMono-OFL.txt`, `PTSans-OFL.txt`), взяты из https://github.com/google/fonts/tree/main/ofl/ptmono и `.../ofl/ptsans`. PT Mono — интерфейс и панели, PT Sans — главное меню, заставка, подпись фото-режима.
