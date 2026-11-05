@@ -112,6 +112,17 @@ func _init() -> void:
 	check("мёртвая зона", RovControl.joystick_to_motors(14999, -14999) == PackedInt32Array([0, 0]))
 	check("сетка ПИД 0,25 -> 0,3", is_equal_approx(RovControl.quantize_gain(0.25), 0.3))
 	check("сетка ПИД 12 -> 9,9", is_equal_approx(RovControl.quantize_gain(12.0), 9.9))
+	var ramp := ThrusterRamp.new(p)
+	var rs := PackedFloat64Array()
+	for i in 150:
+		rs = ramp.step(0.01, PackedFloat64Array([1.0, -1.0]))
+	check("движитель: 1,5 с к ±100 % даёт ±50 %", absf(rs[0] - 0.5) < 1e-12 and absf(rs[1] + 0.5) < 1e-12)
+	for i in 300:
+		rs = ramp.step(0.01, PackedFloat64Array([1.0, -1.0]))
+	check("движитель: за 4,5 с ±100 % и не больше", absf(rs[0] - 1.0) < 1e-12 and absf(rs[1] + 1.0) < 1e-12)
+	for i in 100:
+		rs = ramp.step(0.01, PackedFloat64Array([-1.0, 1.0]))
+	check("движитель: разворот через ноль 6 с на полный ход", absf(rs[0] - (1.0 - 1.0 / 3.0)) < 1e-12)
 
 	# ---- 4) нейтральный в покое ----
 	var xr := RovDynamics.initial_state(1.5)

@@ -1,11 +1,11 @@
 {
   "sections": 32,
   "sections_missing": {},
-  "numbers": 138,
+  "numbers": 135,
   "numbers_bad": {},
   "status_count": {
-    "оценка": 106,
-    "проверено": 22,
+    "оценка": 102,
+    "проверено": 23,
     "подогнано": 10
   },
   "pass": true

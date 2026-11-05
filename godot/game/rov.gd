@@ -25,6 +25,8 @@ var ext_force := PackedFloat64Array()        # кабель-трос: [сила 
 var x: PackedFloat64Array
 var dropped := false
 var thr := PackedFloat64Array([0.0, 0.0])
+var ramp: ThrusterRamp                       # нарастание команды движителя, 100 % за 3 с (научный режим)
+var thr_ramp := true                         # false — мгновенная команда (проверки, сравнение)
 var tank_cmd := PackedInt32Array([0, 0])
 var depth_hold := false
 var depth_target := 0.0
@@ -109,6 +111,7 @@ func setup(water: Underwater, depth: float, north: float, east: float, psi_deg: 
 	var g: Array = Settings.get_value("pid")
 	set_pid(g[0], g[1], g[2])
 	battery = RovEnvironment.Battery.new(p)
+	ramp = ThrusterRamp.new(p)
 	x = RovDynamics.initial_state(depth, deg_to_rad(psi_deg))
 	x[0] = north
 	x[1] = east
@@ -324,8 +327,13 @@ func _physics_process(delta: float) -> void:
 		st = _assist(st, delta)
 	var m := RovControl.joystick_to_motors(st.x, st.y)
 	thr = PackedFloat64Array([m[0] / 100.0, m[1] / 100.0])
+	if control_mode == "science" and not autopilot.is_valid() and thr_ramp:
+		thr = ramp.step(delta, thr)          # как прошивка: 100 % за 3 с (Павлов, прил. А)
+	else:
+		ramp.s = thr.duplicate()             # режимы с помощью и автопилот сами сглаживают команды
 	if battery.E <= 0.0:
 		thr = PackedFloat64Array([0.0, 0.0])
+		ramp.reset()
 	_find_contacts()
 	var n := maxi(1, roundi(delta / DT))
 	var h := delta / n

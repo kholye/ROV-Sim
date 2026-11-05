@@ -159,5 +159,25 @@ class TestCurrent(unittest.TestCase):
         np.testing.assert_allclose(c.velocity_at(1.0, h), c.velocity() * (1.0 / (0.32 * h)) ** (1 / 7))
 
 
+class TestThrusterRamp(unittest.TestCase):
+    def test_ramp_100_in_3s_both_ways(self):
+        p = params.load()
+        r = control.ThrusterRamp(p)
+        for _ in range(150):                              # 1,5 с шагом 10 мс
+            s = r.step(0.01, [1.0, -1.0])
+        np.testing.assert_allclose(s, [0.5, -0.5], atol=1e-12)
+        for _ in range(150):
+            s = r.step(0.01, [1.0, -1.0])
+        np.testing.assert_allclose(s, [1.0, -1.0], atol=1e-12)
+        for _ in range(100):                              # назад: через ноль, 100 % -> -100 % за 6 с
+            s = r.step(0.01, [-1.0, 1.0])
+        np.testing.assert_allclose(s, [1.0 - 100 * 0.01 / 3.0, -1.0 + 100 * 0.01 / 3.0], atol=1e-12)
+
+    def test_no_overshoot_small_step(self):
+        r = control.ThrusterRamp(params.load())
+        s = r.step(0.01, [0.001, 0.0])
+        np.testing.assert_allclose(s, [0.001, 0.0], atol=1e-15)
+
+
 if __name__ == "__main__":
     unittest.main()

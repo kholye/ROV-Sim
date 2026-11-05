@@ -22,6 +22,27 @@ def joystick_to_motors(x, y, dead=15000):
     return int(round(100 * L)), int(round(100 * R))
 
 
+class ThrusterRamp:
+    """Нарастание команды движителя, как в прошивке (Павлов, прил. А, speedControl).
+
+    Команда s ∈ [-1, 1] приближается к заданной линейно: полный ход за thruster_ramp_time (3 с),
+    в обе стороны, через ноль тоже (от +1 до -1 за 6 с).
+    """
+
+    def __init__(self, p):
+        self.rate = 1.0 / p["thruster_ramp_time"]
+        self.s = np.zeros(2)
+
+    def step(self, dt, target):
+        d = np.asarray(target, float) - self.s
+        lim = self.rate * dt
+        self.s = self.s + np.clip(d, -lim, lim)
+        return self.s.copy()
+
+    def reset(self):
+        self.s = np.zeros(2)
+
+
 def quantize_gain(k):
     """Коэффициент так, как его передаёт пульт v7: целое 0..99 = k*10 (сетка 0,1)."""
     # пульт не округляет (ввод должен быть кратен 0,1); здесь округление половины вверх
