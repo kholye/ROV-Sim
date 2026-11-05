@@ -183,6 +183,29 @@ func _control_tests() -> void:
 	sci.x[11] = 0.3                                # толчок по рысканию 0,3 рад/с
 	_run(sci, 10.0)
 	var drift_sci := absf(wrapf(sci.x[5], -PI, PI))
+	# нарастание команды движителя в научном режиме (прошивка: 100 % за 3 с) — с живым вводом, как у игрока
+	var rmp := _make_rov("science")
+	var inst := _make_rov("science")
+	inst.thr_ramp = false
+	Input.action_press("rov_fwd")
+	_run(rmp, 1.5)
+	var t15: float = rmp.thr[0]
+	_run(inst, 1.5)
+	var t15_inst: float = inst.thr[0]
+	_run(rmp, 3.0)
+	var t45: float = rmp.thr[0]
+	_run(inst, 3.0)
+	var v_rmp: float = rmp.x[6]
+	var v_inst: float = inst.x[6]
+	Input.action_release("rov_fwd")
+	_run(rmp, 1.5)
+	var t_rel: float = rmp.thr[0]
+	_run(rmp, 3.0)
+	check("научный: через 1,5 с вперёд тяга %.2f (≈ 0,50), без ramp %.2f; через 4,5 с %.2f (1,00)" % [t15, t15_inst, t45],
+			absf(t15 - 0.5) < 0.03 and t15_inst > 0.99 and absf(t45 - 1.0) < 0.01)
+	check("научный: скорость через 4,5 с с ramp %.3f м/с меньше, чем без %.3f" % [v_rmp, v_inst], v_rmp < v_inst - 0.01)
+	check("научный: после отпускания тяга падает за 3 с (через 1,5 с %.2f, потом %.2f)" % [t_rel, rmp.thr[0]],
+			absf(t_rel - 0.5) < 0.03 and absf(rmp.thr[0]) < 0.01)
 	var ast := _make_rov("assist")
 	check("автопилот: глубина на удержании с цели = глубина старта", ast.depth_hold and is_equal_approx(ast.depth_target, 4.0))
 	ast.x[11] = 0.3
@@ -212,7 +235,7 @@ func _control_tests() -> void:
 	check("ускорение: насос ×3, тяга ×1,5", is_equal_approx(float(bst.p["tank_rate"]), base_rate * 3.0)
 			and is_equal_approx(float(bst.p["thrust_max"]), base_thr * 1.5))
 	Settings.override_from_args({"control": "science"})
-	for r in [sci, ast, bst]:
+	for r in [sci, ast, bst, rmp, inst]:
 		r.queue_free()
 
 
